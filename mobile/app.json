@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.moveonquotes.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.moveonquotes.app",
