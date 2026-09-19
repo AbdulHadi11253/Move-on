@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "965550397188",
+    "project_id": "move-on-a113a",
+    "storage_bucket": "move-on-a113a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:965550397188:android:b0afcd3278b2c1d620a251",
+        "android_client_info": {
+          "package_name": "com.moveonquotes.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDymgwIFERz3Wsewukqp8At7k32PDcW6o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

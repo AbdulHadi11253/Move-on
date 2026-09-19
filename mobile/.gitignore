@@ -42,3 +42,6 @@ yarn-error.*
 
 # Firebase Android config
 google-services.json
+
+# Client-side Firebase config (not a secret; EAS git builds need it)
+!google-services.json
