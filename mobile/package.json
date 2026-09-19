@@ -1,0 +1,53 @@
+{
+  "name": "mobile",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@clerk/clerk-expo": "^2.19.31",
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/netinfo": "12.0.1",
+    "@react-navigation/bottom-tabs": "^7.18.14",
+    "@react-navigation/native": "^7.3.14",
+    "@react-navigation/native-stack": "^7.18.6",
+    "@tanstack/react-query": "^5.101.4",
+    "expo": "^57.0.0",
+    "expo-auth-session": "~57.0.11",
+    "expo-constants": "~57.0.17",
+    "expo-device": "~57.0.1",
+    "expo-font": "~57.0.3",
+    "expo-haptics": "~57.0.2",
+    "expo-image-picker": "~57.0.16",
+    "expo-notifications": "~57.0.17",
+    "expo-secure-store": "~57.0.3",
+    "expo-status-bar": "~57.0.1",
+    "expo-web-browser": "~57.0.2",
+    "nativewind": "^4.2.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-css-interop": "^0.2.6",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-worklets": "0.10.1",
+    "tailwindcss": "^3.4.19",
+    "zustand": "^5.0.14"
+  },
+  "scripts": {
+    "set-lan-ip": "node scripts/set-lan-ip.js",
+    "prestart": "node scripts/set-lan-ip.js",
+    "start": "expo start",
+    "preandroid": "node scripts/set-lan-ip.js",
+    "android": "expo start --android",
+    "preios": "node scripts/set-lan-ip.js",
+    "ios": "expo start --ios",
+    "preweb": "node scripts/set-lan-ip.js",
+    "web": "expo start --web"
+  },
+  "private": true,
+  "devDependencies": {
+    "babel-preset-expo": "~57.0.0"
+  }
+}

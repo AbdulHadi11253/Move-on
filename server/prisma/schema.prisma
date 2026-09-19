@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  NONE
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  YEARLY
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  clerkId            String   @unique
+  email              String   @unique
+  name               String?
+  age                Int?
+  gender             Gender?
+  role               Role     @default(USER)
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  onboardingAnswers    OnboardingAnswer[]
+  journeyEnrollments   UserJourney[]
+  taskCompletions      TaskCompletion[]
+  favoriteQuotes       FavoriteQuote[]
+  savedQuotes          SavedQuote[]
+  subscription         Subscription?
+  notificationSettings NotificationSetting?
+  pushTokens           PushToken[]
+  quotePostSaves       QuotePostSave[]
+  quotePostComments    QuotePostComment[]
+
+  @@index([clerkId])
+}
+
+model OnboardingQuestion {
+  id        String   @id @default(uuid())
+  order     Int      @unique
+  question  String
+  type      String // "single_choice" | "multi_choice" | "text" | "number"
+  options   Json? // array of choice strings, null for text/number
+  isEnabled Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  answers OnboardingAnswer[]
+}
+
+model OnboardingAnswer {
+  id         String             @id @default(uuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   OnboardingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer     String
+  createdAt  DateTime           @default(now())
+
+  @@unique([userId, questionId])
+}
+
+model Journey {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  audience    String? // who this journey is best suited for
+  dayLabel    String   @default("Day") // e.g. "Day" or "No Contact Day" — shown as "{dayLabel} {n} of {totalDays}"
+  totalDays   Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  days        JourneyDay[]
+  enrollments UserJourney[]
+}
+
+model JourneyDay {
+  id        String   @id @default(uuid())
+  journeyId String
+  journey   Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  dayNumber Int
+
+  quotes  JourneyDayQuote[]
+  tasks   JourneyDayTask[]
+  lessons JourneyDayLesson[]
+
+  @@unique([journeyId, dayNumber])
+}
+
+model JourneyDayQuote {
+  id           String     @id @default(uuid())
+  journeyDayId String
+  journeyDay   JourneyDay @relation(fields: [journeyDayId], references: [id], onDelete: Cascade)
+  quoteId      String
+  quote        Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyDayId, quoteId])
+}
+
+model JourneyDayTask {
+  id           String     @id @default(uuid())
+  journeyDayId String
+  journeyDay   JourneyDay @relation(fields: [journeyDayId], references: [id], onDelete: Cascade)
+  taskId       String
+  task         Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyDayId, taskId])
+}
+
+model JourneyDayLesson {
+  id           String     @id @default(uuid())
+  journeyDayId String
+  journeyDay   JourneyDay @relation(fields: [journeyDayId], references: [id], onDelete: Cascade)
+  lessonId     String
+  lesson       Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyDayId, lessonId])
+}
+
+model UserJourney {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeyId    String
+  journey      Journey  @relation(fields: [journeyId], references: [id])
+  currentDay   Int      @default(1)
+  streak       Int      @default(0)
+  isActive     Boolean  @default(false)
+  startedAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  // Set when all of currentDay's tasks are finished. The next day unlocks
+  // 24h after this timestamp; cleared once the day advances.
+  dayCompletedAt DateTime?
+
+  @@unique([userId, journeyId])
+}
+
+model Quote {
+  id        String   @id @default(uuid())
+  text      String
+  author    String?
+  category  String?
+  createdAt DateTime @default(now())
+
+  journeyDays JourneyDayQuote[]
+  favoritedBy FavoriteQuote[]
+  savedBy     SavedQuote[]
+}
+
+model FavoriteQuote {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quoteId])
+}
+
+model SavedQuote {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quoteId])
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String?
+  createdAt   DateTime @default(now())
+
+  journeyDays JourneyDayTask[]
+  completions TaskCompletion[]
+}
+
+model TaskCompletion {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeyId   String
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  dayNumber   Int
+  completedAt DateTime @default(now())
+
+  @@unique([userId, journeyId, taskId, dayNumber])
+}
+
+model Lesson {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  category    String?
+  readMinutes Int?
+  createdAt   DateTime @default(now())
+
+  journeyDays JourneyDayLesson[]
+}
+
+model Subscription {
+  id                  String              @id @default(uuid())
+  userId              String              @unique
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status              SubscriptionStatus  @default(NONE)
+  plan                SubscriptionPlan?
+  revenueCatId        String?
+  trialEndsAt         DateTime?
+  currentPeriodEndsAt DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model NotificationSetting {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyReminder Boolean @default(true)
+  reminderTime  String  @default("09:00")
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now())
+}
+
+model PromoCard {
+  id        String   @id @default(uuid())
+  title     String
+  subtitle  String?
+  imageUrl  String?
+  linkUrl   String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// Admin-editable copy blocks for specific in-app prompts/screens, with a
+// per-block toggle to show/hide that section entirely.
+model AppContent {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  label       String
+  title       String?
+  subtitle    String?
+  buttonLabel String?
+  isEnabled   Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  posts QuotePost[]
+}
+
+// Image-based quote posts, uploaded by admin and stored in Supabase Storage.
+// A post with exactly one image renders as a Single Post; a post with 2+
+// images renders as a swipeable Carousel — the type is derived from image
+// count, not stored, so admin just picks one or many images at upload time.
+// Distinct from the text-based Quote model used inside journey days / Today's Quote.
+model QuotePost {
+  id              String         @id @default(uuid())
+  categoryId      String?
+  category        QuoteCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  commentsEnabled Boolean        @default(true)
+  isPopular       Boolean        @default(false)
+  order           Int            @default(0)
+  showOnHome      Boolean        @default(false)
+  homeOrder       Int            @default(0)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  images   QuotePostImage[]
+  saves    QuotePostSave[]
+  comments QuotePostComment[]
+}
+
+model QuotePostImage {
+  id        String    @id @default(uuid())
+  postId    String
+  post      QuotePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  imagePath String
+  order     Int       @default(0)
+}
+
+model QuotePostSave {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      QuotePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, postId])
+}
+
+model QuotePostComment {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      QuotePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime  @default(now())
+}
