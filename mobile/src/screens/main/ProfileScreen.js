@@ -1,11 +1,12 @@
 import { View, Text, Pressable, Switch, ScrollView, Alert } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useAuth } from "@clerk/clerk-expo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
 import { clearStartedToday } from "../../lib/recoveryFlag";
+import { scheduleDailyReminder, cancelDailyReminder } from "../../lib/notifications";
 import { usePullRefresh } from "../../lib/usePullRefresh";
 import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
@@ -18,11 +19,33 @@ export default function ProfileScreen({ navigation }) {
   const queryClient = useQueryClient();
   const { colors, themeKey, setTheme, themes } = useTheme();
   const [reminderOn, setReminderOn] = useState(true);
+  const [reminderTime, setReminderTime] = useState("09:00");
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
   const { refreshing, onRefresh } = usePullRefresh([["me"]]);
+
+  useEffect(() => {
+    api("/api/users/notification-settings")
+      .then((s) => {
+        setReminderOn(s.dailyReminder);
+        setReminderTime(s.reminderTime);
+      })
+      .catch(() => {});
+  }, []);
+
+  const updateReminder = async (on, time) => {
+    setReminderOn(on);
+    setReminderTime(time);
+    if (on) {
+      const ok = await scheduleDailyReminder(time);
+      if (!ok) Alert.alert("Notifications are off", "Enable notifications for Move On in your phone settings to get daily reminders.");
+    } else {
+      await cancelDailyReminder();
+    }
+    api("/api/users/notification-settings", { method: "PATCH", body: { dailyReminder: on, reminderTime: time } }).catch(() => {});
+  };
 
   const confirmResetProgress = () => {
     Alert.alert(
@@ -126,11 +149,43 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <Switch
               value={reminderOn}
-              onValueChange={setReminderOn}
+              onValueChange={(v) => updateReminder(v, reminderTime)}
               trackColor={{ false: colors.surfaceAlt, true: colors.accent }}
               thumbColor="#FFFFFF"
             />
           </View>
+          {reminderOn && (
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.border,
+              }}
+            >
+              {["08:00", "09:00", "12:00", "18:00", "21:00"].map((t) => {
+                const active = reminderTime === t;
+                return (
+                  <Pressable
+                    key={t}
+                    onPress={() => updateReminder(true, t)}
+                    style={{
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      marginRight: 8,
+                      marginVertical: 3,
+                      backgroundColor: active ? colors.accent : colors.surfaceAlt,
+                    }}
+                  >
+                    <Text style={{ color: active ? colors.accentText : colors.textSecondary, fontSize: 13, fontWeight: "600" }}>{t}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons name="card-outline" size={18} color={colors.textSecondary} />

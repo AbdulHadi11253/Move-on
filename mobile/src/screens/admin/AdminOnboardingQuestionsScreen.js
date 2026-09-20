@@ -17,7 +17,7 @@ const TYPES = [
   { value: "number", label: "Number" },
 ];
 
-const empty = { question: "", type: "single_choice", options: [""] };
+const empty = { question: "", type: "single_choice", options: [""], batch: "1" };
 
 export default function AdminOnboardingQuestionsScreen({ navigation }) {
   const api = useApi();
@@ -50,6 +50,7 @@ export default function AdminOnboardingQuestionsScreen({ navigation }) {
       question: item.question,
       type: item.type,
       options: item.options && item.options.length ? item.options : [""],
+      batch: String(item.batch || 1),
     });
     setModalVisible(true);
   };
@@ -76,6 +77,7 @@ export default function AdminOnboardingQuestionsScreen({ navigation }) {
       const body = {
         question: form.question.trim(),
         type: form.type,
+        batch: Math.max(1, parseInt(form.batch, 10) || 1),
         options: isChoiceType ? form.options.map((o) => o.trim()).filter(Boolean) : null,
       };
       if (editing) {
@@ -128,7 +130,7 @@ export default function AdminOnboardingQuestionsScreen({ navigation }) {
     <Screen>
       <AdminHeader title="Onboarding Questions" onBack={() => navigation.goBack()} rightLabel="+" onRightPress={openCreate} />
       <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: 24, marginTop: -8, marginBottom: 8 }}>
-        Toggle a question off to skip it during onboarding without deleting it.
+        Questions appear before sign-up, grouped by batch (Batch 1 first). Toggle one off to skip it without deleting it.
       </Text>
 
       {isLoading ? (
@@ -143,7 +145,7 @@ export default function AdminOnboardingQuestionsScreen({ navigation }) {
           renderItem={({ item }) => (
             <AdminListRow
               title={`${item.order}. ${item.question}`}
-              subtitle={TYPES.find((t) => t.value === item.type)?.label}
+              subtitle={`Batch ${item.batch || 1} · ${TYPES.find((t) => t.value === item.type)?.label}`}
               onPress={() => openEdit(item)}
               onDelete={() => remove(item)}
               right={
@@ -179,6 +181,14 @@ export default function AdminOnboardingQuestionsScreen({ navigation }) {
                   value={form.question}
                   onChangeText={(v) => setForm({ ...form, question: v })}
                   multiline
+                />
+
+                <FormField
+                  label="Batch (1 = shown first, 2 = next part, ...)"
+                  value={form.batch}
+                  onChangeText={(v) => setForm({ ...form, batch: v.replace(/[^0-9]/g, "") })}
+                  keyboardType="number-pad"
+                  placeholder="1"
                 />
 
                 <Text

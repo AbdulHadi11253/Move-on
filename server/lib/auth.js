@@ -3,6 +3,20 @@ const { prisma } = require("./prisma");
 
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
+// Accounts that are always admins. Extra addresses can be added without a code
+// change via the ADMIN_EMAILS env var (comma-separated).
+const ADMIN_EMAILS = new Set(
+  [
+    "abdulhadi91478@gmail.com",
+    "info@ptechagency.com",
+    "ptechagency@gmail.com",
+    ...(process.env.ADMIN_EMAILS || "").split(","),
+  ]
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
+const isAdminEmail = (email) => ADMIN_EMAILS.has(String(email || "").toLowerCase());
+
 function getBearerToken(req) {
   const header = req.headers.authorization || "";
   const [scheme, token] = header.split(" ");
@@ -38,8 +52,10 @@ async function authenticate(req) {
     const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || null;
 
     user = await prisma.user.create({
-      data: { clerkId, email, name },
+      data: { clerkId, email, name, role: isAdminEmail(email) && clerkUser.emailAddresses?.[0]?.verification?.status === "verified" ? "ADMIN" : "USER" },
     });
+  } else if (user.role !== "ADMIN" && isAdminEmail(user.email)) {
+    user = await prisma.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
   }
 
   return user;

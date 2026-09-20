@@ -23,3 +23,10 @@ export async function apiFetch(path, { method = "GET", body, formData, getToken 
   if (res.status === 204) return null;
   return res.json();
 }
+
+// For endpoints that must work before sign-in (e.g. onboarding questions).
+export async function publicFetch(path) {
+  const res = await fetch(`${API_URL}${path}`);
+  if (!res.ok) throw new Error(`Request failed with ${res.status}`);
+  return res.json();
+}

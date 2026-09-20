@@ -28,6 +28,7 @@ enum SubscriptionStatus {
 }
 
 enum SubscriptionPlan {
+  WEEKLY
   MONTHLY
   YEARLY
 }
@@ -61,6 +62,7 @@ model User {
 model OnboardingQuestion {
   id        String   @id @default(uuid())
   order     Int      @unique
+  batch     Int      @default(1)
   question  String
   type      String // "single_choice" | "multi_choice" | "text" | "number"
   options   Json? // array of choice strings, null for text/number
