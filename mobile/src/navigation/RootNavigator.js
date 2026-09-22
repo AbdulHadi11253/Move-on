@@ -13,6 +13,7 @@ import CategoryQuotesScreen from "../screens/main/CategoryQuotesScreen";
 import MostPopularScreen from "../screens/main/MostPopularScreen";
 import PrivacyPolicyScreen from "../screens/main/PrivacyPolicyScreen";
 import TermsScreen from "../screens/main/TermsScreen";
+import AffirmationSettingsScreen from "../screens/main/AffirmationSettingsScreen";
 import { useApi } from "../lib/useApi";
 import { useTheme } from "../theme/ThemeContext";
 import { useOnboardingStore } from "../state/onboardingStore";
@@ -176,6 +177,7 @@ export default function RootNavigator() {
         <Stack.Screen name="QuotesExplore" component={QuotesExploreScreen} />
         <Stack.Screen name="CategoryQuotes" component={CategoryQuotesScreen} />
         <Stack.Screen name="MostPopular" component={MostPopularScreen} />
+        <Stack.Screen name="AffirmationSettings" component={AffirmationSettingsScreen} />
         {legal}
       </>
     );

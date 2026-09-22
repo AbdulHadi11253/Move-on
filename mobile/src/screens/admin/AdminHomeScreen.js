@@ -25,7 +25,8 @@ const SECTIONS = [
   { key: "AdminJourneys", label: "Journeys", desc: "Flexible-length recovery programs", icon: "map-outline" },
   { key: "AdminUsers", label: "Users", desc: "Accounts & roles", icon: "people-outline" },
   { key: "AdminPromoCards", label: "Promo Cards", desc: "In-app promotions", icon: "megaphone-outline" },
-  { key: "AdminNotifications", label: "Notifications", desc: "Send a push to everyone", icon: "notifications-outline" },
+  { key: "AdminNotifications", label: "Notifications", desc: "Send a one-time push to everyone", icon: "notifications-outline" },
+  { key: "AdminAffirmations", label: "Daily Affirmations", desc: "Messages & send times", icon: "heart-outline" },
   { key: "AdminContent", label: "App Content", desc: "Edit prompt text & visibility", icon: "document-text-outline" },
   {
     key: "AdminOnboardingQuestions",

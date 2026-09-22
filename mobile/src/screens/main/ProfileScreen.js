@@ -186,6 +186,23 @@ export default function ProfileScreen({ navigation }) {
               })}
             </View>
           )}
+          <Pressable
+            onPress={() => navigation.navigate("AffirmationSettings")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="heart-outline" size={18} color={colors.textSecondary} />
+              <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10 }}>Daily affirmations</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons name="card-outline" size={18} color={colors.textSecondary} />

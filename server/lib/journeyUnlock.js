@@ -15,7 +15,7 @@ async function notifyNewDay(userId, dayNumber, dayLabel) {
     if (content && content.isEnabled === false) return;
     const title = content?.title || "A new day has opened";
     const body = content?.subtitle || `${dayLabel || "Day"} ${dayNumber} is ready. Open the app to continue your journey.`;
-    await sendPushToUser(userId, title, body, { type: "new_day", dayNumber });
+    await sendPushToUser(userId, title, body, { type: "new_day", dayNumber }, content?.imageUrl || null);
   } catch (e) {
     console.error("notifyNewDay failed:", e.message);
   }

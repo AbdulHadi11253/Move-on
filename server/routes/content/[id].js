@@ -9,10 +9,10 @@ module.exports = withAdmin(async (req, res) => {
     return;
   }
 
-  const { title, subtitle, buttonLabel, isEnabled } = req.body || {};
+  const { title, subtitle, buttonLabel, imageUrl, isEnabled } = req.body || {};
   const block = await prisma.appContent.update({
     where: { id },
-    data: { title, subtitle, buttonLabel, isEnabled },
+    data: { title, subtitle, buttonLabel, imageUrl, isEnabled },
   });
   res.status(200).json(block);
 });

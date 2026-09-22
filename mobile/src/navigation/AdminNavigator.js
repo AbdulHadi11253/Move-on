@@ -12,6 +12,7 @@ import AdminContentScreen from "../screens/admin/AdminContentScreen";
 import AdminOnboardingQuestionsScreen from "../screens/admin/AdminOnboardingQuestionsScreen";
 import AdminQuotePostsScreen from "../screens/admin/AdminQuotePostsScreen";
 import AdminQuoteCategoriesScreen from "../screens/admin/AdminQuoteCategoriesScreen";
+import AdminAffirmationsScreen from "../screens/admin/AdminAffirmationsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +32,7 @@ export default function AdminNavigator() {
       <Stack.Screen name="AdminOnboardingQuestions" component={AdminOnboardingQuestionsScreen} />
       <Stack.Screen name="AdminQuotePosts" component={AdminQuotePostsScreen} />
       <Stack.Screen name="AdminQuoteCategories" component={AdminQuoteCategoriesScreen} />
+      <Stack.Screen name="AdminAffirmations" component={AdminAffirmationsScreen} />
     </Stack.Navigator>
   );
 }

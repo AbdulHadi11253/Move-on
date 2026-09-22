@@ -55,6 +55,7 @@ model User {
   pushTokens           PushToken[]
   quotePostSaves       QuotePostSave[]
   quotePostComments    QuotePostComment[]
+  affirmationSubscriptions UserAffirmationSubscription[]
 
   @@index([clerkId])
 }
@@ -277,8 +278,44 @@ model AppContent {
   title       String?
   subtitle    String?
   buttonLabel String?
+  imageUrl    String?
   isEnabled   Boolean  @default(true)
   updatedAt   DateTime @updatedAt
+}
+
+// A pool of affirmation messages the admin maintains. Each scheduled send
+// (AffirmationSchedule) picks the next enabled one, round-robin by `order`.
+model AffirmationMessage {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  imageUrl  String?
+  isEnabled Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// A daily recurring send time the admin defines (e.g. 08:00, 13:00, 20:00).
+// Users opt into whichever of these times they want via UserAffirmationSubscription
+// — that selection doubles as "how many a day" (however many they pick).
+model AffirmationSchedule {
+  id           String   @id @default(uuid())
+  time         String // "HH:MM", 24h, server/UTC time
+  isEnabled    Boolean  @default(true)
+  lastSentDate String? // "YYYY-MM-DD" — guards against double-sending same day
+  createdAt    DateTime @default(now())
+
+  subscribers UserAffirmationSubscription[]
+}
+
+model UserAffirmationSubscription {
+  id         String              @id @default(uuid())
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   AffirmationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scheduleId])
 }
 
 model QuoteCategory {

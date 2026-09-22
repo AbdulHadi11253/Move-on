@@ -1,19 +1,21 @@
 import { useState } from "react";
-import { View, Text, Pressable, FlatList, Modal, Switch, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Image, FlatList, Modal, Switch, Alert, ActivityIndicator } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
 import Screen from "../../components/ui/Screen";
 import AdminHeader from "../../components/admin/AdminHeader";
 import FormField from "../../components/admin/FormField";
+import { pickAndUploadImage } from "../../lib/adminImageUpload";
 
 export default function AdminContentScreen({ navigation }) {
   const api = useApi();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: "", subtitle: "", buttonLabel: "" });
+  const [form, setForm] = useState({ title: "", subtitle: "", buttonLabel: "", imageUrl: "" });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["admin-content"],
@@ -40,6 +42,7 @@ export default function AdminContentScreen({ navigation }) {
       title: block.title || "",
       subtitle: block.subtitle || "",
       buttonLabel: block.buttonLabel || "",
+      imageUrl: block.imageUrl || "",
     });
   };
 
@@ -109,6 +112,52 @@ export default function AdminContentScreen({ navigation }) {
               value={form.buttonLabel}
               onChangeText={(v) => setForm({ ...form, buttonLabel: v })}
             />
+
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              Notification image (optional)
+            </Text>
+            {form.imageUrl ? (
+              <View style={{ marginBottom: 16 }}>
+                <Image source={{ uri: form.imageUrl }} style={{ width: 96, height: 96, borderRadius: 12, marginBottom: 8 }} />
+                <Pressable onPress={() => setForm({ ...form, imageUrl: "" })}>
+                  <Text style={{ color: colors.danger, fontWeight: "600", fontSize: 13 }}>Remove image</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                disabled={uploading}
+                onPress={async () => {
+                  setUploading(true);
+                  try {
+                    const url = await pickAndUploadImage(api);
+                    if (url) setForm((f) => ({ ...f, imageUrl: url }));
+                  } catch (e) {
+                    Alert.alert("Couldn't upload image", e.message);
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Text style={{ color: colors.accent, fontWeight: "600" }}>{uploading ? "Uploading..." : "Add image"}</Text>
+              </Pressable>
+            )}
 
             <Pressable
               onPress={save}
