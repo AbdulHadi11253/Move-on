@@ -1,6 +1,9 @@
 const { prisma } = require("./prisma");
 
-const ENTITLEMENT_ID = process.env.REVENUECAT_ENTITLEMENT_ID || "premium";
+// Must match the entitlement's lookup_key in RevenueCat exactly (Project
+// Settings > Entitlements) — "Move on Pro" as of this project's current
+// setup, not the more common "premium" default some RevenueCat guides use.
+const ENTITLEMENT_ID = process.env.REVENUECAT_ENTITLEMENT_ID || "Move on Pro";
 
 // RevenueCat is the source of truth for purchases. We never trust the client
 // about entitlement state — after a purchase (or a webhook ping) we re-read the
