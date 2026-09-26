@@ -1,0 +1,9 @@
+# EAS Build project archive exclusions.
+#
+# server/.claude/skills and server/.windsurf/skills are symlinks into
+# server/.agents/skills (Claude Code / Windsurf skill directories, unrelated
+# to the app itself). EAS's local archiving tries to copy the symlinks
+# verbatim on Windows, which fails with EPERM without elevated privileges.
+# None of this is needed to build the app, so it's excluded outright.
+server/.claude
+server/.windsurf
