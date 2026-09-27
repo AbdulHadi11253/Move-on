@@ -17,6 +17,7 @@ export default function SignInScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // "sign_in" | "sign_up" | "forgot_password"
   const [mode, setMode] = useState("sign_in");
   const [loading, setLoading] = useState(false);
   // Clerk's instance requires email verification at sign-up (email_code). Once
@@ -24,6 +25,10 @@ export default function SignInScreen() {
   // instead of trying to activate a session before the address is verified.
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
+  // Forgot-password: "request" (enter email) -> "reset" (enter code + new password)
+  const [resetStep, setResetStep] = useState("request");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const onGooglePress = useCallback(async () => {
     try {
@@ -83,6 +88,47 @@ export default function SignInScreen() {
     }
   }, [code, signUp, signUpLoaded, setActiveSignUp]);
 
+  const onForgotPasswordRequest = useCallback(async () => {
+    if (!signInLoaded || !email.trim()) return;
+    setLoading(true);
+    try {
+      await signIn.create({ identifier: email.trim(), strategy: "reset_password_email_code" });
+      setResetStep("reset");
+    } catch (err) {
+      Alert.alert("Couldn't send code", err.errors?.[0]?.message || err.message || "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [email, signIn, signInLoaded]);
+
+  const onResetPasswordSubmit = useCallback(async () => {
+    if (!signInLoaded || !resetCode.trim() || !newPassword) return;
+    setLoading(true);
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: "reset_password_email_code",
+        code: resetCode.trim(),
+        password: newPassword,
+      });
+      if (result.status === "complete") {
+        await setActiveSignIn({ session: result.createdSessionId });
+      } else {
+        Alert.alert("Reset incomplete", "Please check the code and try again.");
+      }
+    } catch (err) {
+      Alert.alert("Couldn't reset password", err.errors?.[0]?.message || err.message || "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [resetCode, newPassword, signIn, signInLoaded, setActiveSignIn]);
+
+  const backToSignIn = () => {
+    setMode("sign_in");
+    setResetStep("request");
+    setResetCode("");
+    setNewPassword("");
+  };
+
   const inputStyle = {
     borderWidth: 1,
     borderColor: colors.border,
@@ -128,6 +174,92 @@ export default function SignInScreen() {
             <Text style={{ color: colors.accentText, fontSize: 15, fontWeight: "600" }}>
               {loading ? "Verifying..." : "Verify"}
             </Text>
+          </Pressable>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (mode === "forgot_password") {
+    return (
+      <Screen>
+        <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 28 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", textAlign: "center", marginBottom: 8 }}>
+            Reset your password
+          </Text>
+          {resetStep === "request" ? (
+            <>
+              <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: "center", marginBottom: 28 }}>
+                Enter your account email and we'll send you a reset code.
+              </Text>
+              <TextInput
+                placeholder="Email"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                style={[inputStyle, { marginBottom: 20 }]}
+              />
+              <Pressable
+                onPress={onForgotPasswordRequest}
+                disabled={loading || !email.trim()}
+                style={{
+                  backgroundColor: colors.accent,
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  alignItems: "center",
+                  marginBottom: 16,
+                  opacity: loading || !email.trim() ? 0.7 : 1,
+                }}
+              >
+                <Text style={{ color: colors.accentText, fontSize: 15, fontWeight: "600" }}>
+                  {loading ? "Sending..." : "Send reset code"}
+                </Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: "center", marginBottom: 28 }}>
+                Enter the code we sent to {email} and choose a new password.
+              </Text>
+              <TextInput
+                placeholder="Reset code"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                keyboardType="number-pad"
+                value={resetCode}
+                onChangeText={setResetCode}
+                style={[inputStyle, { textAlign: "center", letterSpacing: 4 }]}
+              />
+              <TextInput
+                placeholder="New password"
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+                style={[inputStyle, { marginBottom: 20 }]}
+              />
+              <Pressable
+                onPress={onResetPasswordSubmit}
+                disabled={loading || !resetCode.trim() || !newPassword}
+                style={{
+                  backgroundColor: colors.accent,
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  alignItems: "center",
+                  marginBottom: 16,
+                  opacity: loading || !resetCode.trim() || !newPassword ? 0.7 : 1,
+                }}
+              >
+                <Text style={{ color: colors.accentText, fontSize: 15, fontWeight: "600" }}>
+                  {loading ? "Resetting..." : "Reset password"}
+                </Text>
+              </Pressable>
+            </>
+          )}
+          <Pressable onPress={backToSignIn}>
+            <Text style={{ textAlign: "center", color: colors.textSecondary, fontSize: 14 }}>Back to sign in</Text>
           </Pressable>
         </View>
       </Screen>
@@ -215,8 +347,20 @@ export default function SignInScreen() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
-          style={[inputStyle, { marginBottom: 20 }]}
+          style={[inputStyle, { marginBottom: mode === "sign_in" ? 8 : 20 }]}
         />
+
+        {mode === "sign_in" && (
+          <Pressable
+            onPress={() => {
+              setResetStep("request");
+              setMode("forgot_password");
+            }}
+            style={{ alignSelf: "flex-end", marginBottom: 20 }}
+          >
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Forgot password?</Text>
+          </Pressable>
+        )}
 
         <Pressable
           onPress={onEmailSubmit}

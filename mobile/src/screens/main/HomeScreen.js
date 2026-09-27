@@ -18,6 +18,7 @@ import StartRecoveryButton from "../../components/ui/StartRecoveryButton";
 import ChooseJourneyButton from "../../components/ui/ChooseJourneyButton";
 import ThemedRefreshControl from "../../components/ui/ThemedRefreshControl";
 import MeditationIcon from "../../components/ui/MeditationIcon";
+import AdBanner from "../../components/ui/AdBanner";
 import PromoCards from "../../components/home/PromoCards";
 import CarouselQuotesSection from "../../components/home/CarouselQuotesSection";
 import SinglePostsSection from "../../components/home/SinglePostsSection";
@@ -28,6 +29,8 @@ import ScrollToTopButton from "../../components/ui/ScrollToTopButton";
 
 export default function HomeScreen({ navigation }) {
   const api = useApi();
+  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
+  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
   const { user } = useUser();
   const { colors } = useTheme();
   const [checkedStorage, setCheckedStorage] = useState(false);
@@ -46,8 +49,6 @@ export default function HomeScreen({ navigation }) {
     queryKey: ["journey-today"],
     queryFn: () => api("/api/journeys/today"),
   });
-
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
 
   const noJourneyContent = useContentBlock("home_no_journey");
   const startRecoveryContent = useContentBlock("start_recovery_button");
@@ -255,6 +256,7 @@ export default function HomeScreen({ navigation }) {
 
       <CommentsModal post={commentsPost} onClose={closeComments} refreshKeys={refreshKeys} />
       <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
+      {!entitled && <AdBanner />}
     </Screen>
   );
 }

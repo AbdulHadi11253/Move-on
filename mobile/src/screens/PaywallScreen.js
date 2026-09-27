@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../lib/useApi";
 import { loadPackages, purchase, restore } from "../lib/purchases";
 import { useTheme } from "../theme/ThemeContext";
+import { useAdsStore } from "../state/adsStore";
 import Screen from "../components/ui/Screen";
 
 const BENEFITS = [
@@ -24,6 +25,7 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
   const { colors } = useTheme();
   const api = useApi();
   const { signOut } = useAuth();
+  const setContinuedFree = useAdsStore((s) => s.setContinuedFree);
   const [packages, setPackages] = useState({ weekly: null, monthly: null });
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState("monthly");
@@ -185,7 +187,12 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
           </Pressable>
         </View>
 
-        <Pressable onPress={() => signOut()} hitSlop={8} style={{ marginTop: 22, alignItems: "center" }}>
+        <Pressable onPress={setContinuedFree} hitSlop={8} style={{ marginTop: 22, alignItems: "center" }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: "600" }}>Continue for free</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>With ads. Upgrade anytime.</Text>
+        </Pressable>
+
+        <Pressable onPress={() => signOut()} hitSlop={8} style={{ marginTop: 18, alignItems: "center" }}>
           <Text style={{ color: colors.textMuted, fontSize: 13 }}>Sign out</Text>
         </Pressable>
       </ScrollView>

@@ -17,7 +17,9 @@ import AffirmationSettingsScreen from "../screens/main/AffirmationSettingsScreen
 import { useApi } from "../lib/useApi";
 import { useTheme } from "../theme/ThemeContext";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { useAdsStore } from "../state/adsStore";
 import { initPurchases, resetPurchases, purchasesConfigured } from "../lib/purchases";
+import { initAds, showSessionInterstitial } from "../lib/ads";
 import { registerForPush, scheduleDailyReminder, cancelDailyReminder } from "../lib/notifications";
 
 const Stack = createNativeStackNavigator();
@@ -67,6 +69,7 @@ export default function RootNavigator() {
   const api = useApi();
   const { colors, theme } = useTheme();
   const { answers, questionsDone, hydrated, markDone, clearAnswers } = useOnboardingStore();
+  const { continuedFree, hydrated: adsHydrated } = useAdsStore();
   const [me, setMe] = useState(null);
   const [loadingMe, setLoadingMe] = useState(true);
 
@@ -115,11 +118,23 @@ export default function RootNavigator() {
     },
   };
 
-  if (!isLoaded || !hydrated || (isSignedIn && loadingMe)) return <Spinner colors={colors} />;
+  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
+  const showingAds = !entitled && (continuedFree || !purchasesConfigured);
+
+  // Ads only make sense once we know the user isn't paying — init lazily,
+  // then show one interstitial for the session once they're past the paywall.
+  const pastPaywall = showingAds && me?.onboardingComplete && (continuedFree || !purchasesConfigured);
+  useEffect(() => {
+    if (!showingAds) return;
+    initAds().then(() => {
+      if (pastPaywall) showSessionInterstitial();
+    });
+  }, [showingAds, pastPaywall]);
+
+  if (!isLoaded || !hydrated || !adsHydrated || (isSignedIn && loadingMe)) return <Spinner colors={colors} />;
 
   const hasAnswers = Object.keys(answers).length > 0;
-  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
-  const needsPaywall = purchasesConfigured && !entitled;
+  const needsPaywall = purchasesConfigured && !entitled && !continuedFree;
 
   const legal = (
     <>
