@@ -19,7 +19,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { useOnboardingStore } from "../state/onboardingStore";
 import { useAdsStore } from "../state/adsStore";
 import { initPurchases, resetPurchases, purchasesConfigured } from "../lib/purchases";
-import { initAds, showSessionInterstitial } from "../lib/ads";
+import { initAds, showSessionInterstitial, useShowAds } from "../lib/ads";
 import { registerForPush, scheduleDailyReminder, cancelDailyReminder } from "../lib/notifications";
 
 const Stack = createNativeStackNavigator();
@@ -119,22 +119,25 @@ export default function RootNavigator() {
   };
 
   const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
-  const showingAds = !entitled && (continuedFree || !purchasesConfigured);
+  const needsPaywall = purchasesConfigured && !entitled && !continuedFree;
+  // Same eligibility check AdBanner uses (see useShowAds's doc comment) —
+  // never computed a second, different way here.
+  const showingAds = useShowAds();
+  const inMainAppWithAds = showingAds && !needsPaywall && me?.onboardingComplete;
 
   // Ads only make sense once we know the user isn't paying — init lazily,
-  // then show one interstitial for the session once they're past the paywall.
-  const pastPaywall = showingAds && me?.onboardingComplete && (continuedFree || !purchasesConfigured);
+  // then show one interstitial for the session once they're actually in the
+  // main app (not still on the paywall/onboarding).
   useEffect(() => {
     if (!showingAds) return;
     initAds().then(() => {
-      if (pastPaywall) showSessionInterstitial();
+      if (inMainAppWithAds) showSessionInterstitial();
     });
-  }, [showingAds, pastPaywall]);
+  }, [showingAds, inMainAppWithAds]);
 
   if (!isLoaded || !hydrated || !adsHydrated || (isSignedIn && loadingMe)) return <Spinner colors={colors} />;
 
   const hasAnswers = Object.keys(answers).length > 0;
-  const needsPaywall = purchasesConfigured && !entitled && !continuedFree;
 
   const legal = (
     <>

@@ -30,7 +30,6 @@ import ScrollToTopButton from "../../components/ui/ScrollToTopButton";
 export default function HomeScreen({ navigation }) {
   const api = useApi();
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
-  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
   const { user } = useUser();
   const { colors } = useTheme();
   const [checkedStorage, setCheckedStorage] = useState(false);
@@ -256,7 +255,7 @@ export default function HomeScreen({ navigation }) {
 
       <CommentsModal post={commentsPost} onClose={closeComments} refreshKeys={refreshKeys} />
       <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
-      {!entitled && <AdBanner />}
+      <AdBanner />
     </Screen>
   );
 }

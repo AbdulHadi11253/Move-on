@@ -43,8 +43,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "androidAppId": "ca-app-pub-7457922785936662~9034132855",
+          "iosAppId": "ca-app-pub-7457922785936662~7828862390",
           "userTrackingUsageDescription": "This identifier lets Move On show you fewer, better-targeted ads. You can decline and still use the app."
         }
       ],

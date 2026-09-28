@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, ScrollView, Alert } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
+import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../lib/useApi";
 import { loadPackages, purchase, restore } from "../lib/purchases";
@@ -25,6 +26,7 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
   const { colors } = useTheme();
   const api = useApi();
   const { signOut } = useAuth();
+  const queryClient = useQueryClient();
   const setContinuedFree = useAdsStore((s) => s.setContinuedFree);
   const [packages, setPackages] = useState({ weekly: null, monthly: null });
   const [loading, setLoading] = useState(true);
@@ -40,8 +42,14 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
 
   const finish = async () => {
     const sub = await api("/api/subscription/sync", { method: "POST" });
-    if (sub.status === "TRIAL" || sub.status === "ACTIVE") onSubscribed(sub);
-    else Alert.alert("Not active yet", "We couldn't confirm your subscription yet. Please try Restore in a moment.");
+    if (sub.status === "TRIAL" || sub.status === "ACTIVE") {
+      // useShowAds() reads its own ["me"] query cache — invalidate it now so
+      // ads switch off immediately instead of waiting for its next refetch.
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      onSubscribed(sub);
+    } else {
+      Alert.alert("Not active yet", "We couldn't confirm your subscription yet. Please try Restore in a moment.");
+    }
   };
 
   const start = async () => {

@@ -2,17 +2,21 @@ import { useState } from "react";
 import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme/ThemeContext";
-import { adsAvailable, BANNER_UNIT_ID } from "../../lib/ads";
+import { adsAvailable, BANNER_UNIT_ID, useShowAds } from "../../lib/ads";
 
-// Shown only to non-subscribed users (see RootNavigator's `entitled` check).
+// Self-contained: decides on its own whether ads should show right now (see
+// useShowAds's doc comment for the exact rule — same one RootNavigator uses
+// for the interstitial, so the two can never disagree). Callers just render
+// <AdBanner /> unconditionally.
 // Dismissible for the current app session via the X — reappears next launch,
 // same as the interstitial's per-session cap.
 export default function AdBanner() {
   const { colors } = useTheme();
+  const showAds = useShowAds();
   const [dismissed, setDismissed] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  if (!adsAvailable || dismissed) return null;
+  if (!adsAvailable || !showAds || dismissed) return null;
 
   const { BannerAd, BannerAdSize } = require("react-native-google-mobile-ads");
 

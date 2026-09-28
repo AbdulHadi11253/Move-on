@@ -1,17 +1,28 @@
 import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
+import { useQuery } from "@tanstack/react-query";
+import { useApi } from "./useApi";
+import { useAdsStore } from "../state/adsStore";
+import { purchasesConfigured } from "./purchases";
 
-// TEST ad unit IDs (Google's official ones, always safe to ship in dev) —
-// swap these for the real IDs from AdMob before submitting to the stores.
-// See EXPO_PUBLIC_ADMOB_* below for how to override without editing code.
+// Google's official test ad unit IDs — always safe to serve, never earn or
+// risk anything. AdMob policy prohibits interacting with your own live ads,
+// which is easy to do by accident while testing, so __DEV__ builds always use
+// these regardless of the real IDs below.
 const TEST_UNITS = {
   banner: { android: "ca-app-pub-3940256099942544/6300978111", ios: "ca-app-pub-3940256099942544/2934735716" },
   interstitial: { android: "ca-app-pub-3940256099942544/1033173712", ios: "ca-app-pub-3940256099942544/4411468910" },
 };
 
+// Move On's real AdMob ad units (see app.json for the matching App IDs).
+const PROD_UNITS = {
+  banner: { android: "ca-app-pub-7457922785936662/8460166211", ios: "ca-app-pub-7457922785936662/7226975593" },
+  interstitial: { android: "ca-app-pub-7457922785936662/3207839533", ios: "ca-app-pub-7457922785936662/4329349512" },
+};
+
 function unitId(kind) {
-  const envKey = `EXPO_PUBLIC_ADMOB_${kind.toUpperCase()}_${Platform.OS.toUpperCase()}`;
-  return process.env[envKey] || TEST_UNITS[kind][Platform.OS];
+  const units = __DEV__ ? TEST_UNITS : PROD_UNITS;
+  return units[kind][Platform.OS];
 }
 
 export const BANNER_UNIT_ID = unitId("banner");
@@ -19,6 +30,29 @@ export const INTERSTITIAL_UNIT_ID = unitId("interstitial");
 
 // Ads need a real build (native module) — never available in Expo Go.
 export const adsAvailable = Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+
+// Single source of truth for "should this user see ads right now" — used by
+// RootNavigator (to init the SDK / show the session interstitial) and
+// AdBanner (to render or not). Never compute this a second, different way;
+// import and use this hook instead, so the two can't drift out of sync.
+//
+// True only when: purchases are even configured (RevenueCat keys present) AND
+// the user isn't entitled (not an admin, not subscribed) AND they explicitly
+// chose "Continue for free" AND the admin hasn't globally switched ads off.
+export function useShowAds() {
+  const api = useApi();
+  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
+  const { data: content } = useQuery({ queryKey: ["app-content"], queryFn: () => api("/api/content"), staleTime: 5 * 60 * 1000 });
+  const continuedFree = useAdsStore((s) => s.continuedFree);
+
+  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
+  // Default to OFF until we've actually confirmed the admin's setting, so
+  // there's never a window where an ad could show before we know it's allowed.
+  const adsEnabledGlobally = content ? content.find((b) => b.key === "ads_enabled")?.isEnabled !== false : false;
+  const optedIntoFreeTier = continuedFree || !purchasesConfigured;
+
+  return !entitled && optedIntoFreeTier && adsEnabledGlobally;
+}
 
 let mobileAds = null;
 let started = false;
@@ -29,8 +63,9 @@ function sdk() {
 }
 
 // Requests iOS App Tracking Transparency (no-op on Android) and starts the
-// Google Mobile Ads SDK. Safe to call more than once. Best-effort: ad
-// failures should never block the app.
+// Google Mobile Ads SDK. Guarded by `started` so it's safe to call from
+// multiple places/renders — the SDK is only ever initialized once per app run.
+// Best-effort: ad failures should never block the app.
 export async function initAds() {
   if (!adsAvailable || started) return;
   started = true;
@@ -53,9 +88,9 @@ export function getInterstitial() {
 
 let shownThisSession = false;
 
-// Loads and shows one interstitial per app session (has its own native close
-// button — Google requires it, can't be configured away). Best-effort/silent
-// on any failure; never blocks navigation.
+// Loads and shows at most one interstitial per app session (has its own
+// native close button — Google requires it, can't be configured away).
+// Best-effort/silent on any failure; never blocks navigation.
 export function showSessionInterstitial() {
   if (!adsAvailable || shownThisSession) return;
   shownThisSession = true;
