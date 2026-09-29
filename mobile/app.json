@@ -1,4 +1,11 @@
 {
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-7457922785936662~9034132855",
+    "ios_app_id": "ca-app-pub-7457922785936662~7828862390",
+    "delay_app_measurement_init": false,
+    "optimize_initialization": true,
+    "optimize_ad_loading": true
+  },
   "expo": {
     "name": "Move On",
     "slug": "move-on",
