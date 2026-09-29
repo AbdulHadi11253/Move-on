@@ -6,7 +6,7 @@ module.exports = withAdmin(async (req, res) => {
   const { id } = req.query;
 
   if (req.method === "PATCH") {
-    const { images, categoryId, commentsEnabled, isActive, isPopular, showOnHome } = req.body || {};
+    const { images, text, categoryId, commentsEnabled, isActive, isPopular, showOnHome } = req.body || {};
 
     const existing = await prisma.quotePost.findUnique({ where: { id }, include: { images: true } });
     if (!existing) {
@@ -16,6 +16,7 @@ module.exports = withAdmin(async (req, res) => {
 
     const data = {};
     if (categoryId !== undefined) data.categoryId = categoryId || null;
+    if (text !== undefined) data.text = text?.trim() || null;
     if (commentsEnabled !== undefined) data.commentsEnabled = commentsEnabled;
     if (isActive !== undefined) data.isActive = isActive;
     if (isPopular !== undefined) data.isPopular = isPopular;
@@ -27,7 +28,7 @@ module.exports = withAdmin(async (req, res) => {
       }
     }
 
-    const replacingImages = Array.isArray(images) && images.length > 0;
+    const replacingImages = Array.isArray(images);
     if (replacingImages) {
       data.images = {
         deleteMany: {},

@@ -32,6 +32,12 @@ export default function MainTabs() {
     queryFn: () => api("/api/content"),
     staleTime: 5 * 60 * 1000,
   });
+  // Only spares users who already have an active journey — checked inside
+  // JourneyScreen/ProgressScreen, not here, since this hook has no journey
+  // data. Here we just decide whether the tabs exist at all; a user who
+  // already has an active journey when the admin flips this off keeps seeing
+  // their tabs (the routes still work, only the fresh "choose one" nag hides).
+  const { data: journeyToday } = useQuery({ queryKey: ["journey-today"], queryFn: () => api("/api/journeys/today") });
 
   if (isLoading) {
     return (
@@ -43,6 +49,9 @@ export default function MainTabs() {
 
   const landing = (content || []).find((b) => b.key === "landing_tab");
   const initialRouteName = (landing?.title || "").trim().toLowerCase() === "quotes" ? "Quotes" : "Home";
+  const trackerContent = (content || []).find((b) => b.key === "tracker_enabled");
+  const trackerEnabled = !trackerContent || trackerContent.isEnabled;
+  const showTrackerTabs = trackerEnabled || !!journeyToday?.hasActiveJourney;
 
   return (
     <Tab.Navigator
@@ -69,8 +78,8 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeNavigator} />
       <Tab.Screen name="Quotes" component={QuotesScreen} />
-      <Tab.Screen name="Journey" component={JourneyNavigator} />
-      <Tab.Screen name="Progress" component={ProgressScreen} />
+      {showTrackerTabs && <Tab.Screen name="Journey" component={JourneyNavigator} />}
+      {showTrackerTabs && <Tab.Screen name="Progress" component={ProgressScreen} />}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

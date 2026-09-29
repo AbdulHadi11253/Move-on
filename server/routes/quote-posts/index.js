@@ -39,7 +39,7 @@ module.exports = withAuth(async (req, res) => {
     return {
       ...rest,
       images,
-      type: images.length > 1 ? "CAROUSEL" : "SINGLE",
+      type: images.length > 1 ? "CAROUSEL" : images.length === 1 ? "SINGLE" : "TEXT",
       isSaved: saves.length > 0,
       commentCount: _count.comments,
     };

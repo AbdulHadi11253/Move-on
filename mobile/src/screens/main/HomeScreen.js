@@ -11,6 +11,7 @@ import { usePullRefresh } from "../../lib/usePullRefresh";
 import { useScrollToTop } from "../../lib/useScrollToTop";
 import { useQuotePostActions } from "../../lib/useQuotePostActions";
 import { hasStartedToday, markStartedToday } from "../../lib/recoveryFlag";
+import { hasJourneyDeferred, markJourneyDeferred } from "../../lib/journeyFlag";
 import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
 import ProgressBar from "../../components/ui/ProgressBar";
@@ -34,15 +35,22 @@ export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
   const [checkedStorage, setCheckedStorage] = useState(false);
   const [startedToday, setStartedToday] = useState(false);
+  const [deferred, setDeferred] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      hasStartedToday().then((started) => {
+      Promise.all([hasStartedToday(), hasJourneyDeferred()]).then(([started, skipped]) => {
         setStartedToday(started);
+        setDeferred(skipped);
         setCheckedStorage(true);
       });
     }, [])
   );
+
+  const onSkipJourney = async () => {
+    await markJourneyDeferred();
+    setDeferred(true);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["journey-today"],
@@ -50,6 +58,8 @@ export default function HomeScreen({ navigation }) {
   });
 
   const noJourneyContent = useContentBlock("home_no_journey");
+  const trackerContent = useContentBlock("tracker_enabled");
+  const trackerEnabled = !trackerContent || trackerContent.isEnabled;
   const startRecoveryContent = useContentBlock("start_recovery_button");
   const todayQuoteContent = useContentBlock("home_today_quote");
   const carouselLimitContent = useContentBlock("home_carousel_limit");
@@ -105,7 +115,13 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
-  if (!data?.hasActiveJourney) {
+  const hasJourney = !!data?.hasActiveJourney;
+  // The admin's tracker toggle only spares users who already have an active
+  // journey — it's meant to stop new users from being funneled into the
+  // journey/progress feature, not to take it away from someone already using it.
+  const effectiveDeferred = deferred || (!trackerEnabled && !hasJourney);
+
+  if (!hasJourney && !effectiveDeferred) {
     const showNoJourneyText = !noJourneyContent || noJourneyContent.isEnabled;
     return (
       <Screen>
@@ -130,13 +146,14 @@ export default function HomeScreen({ navigation }) {
           <ChooseJourneyButton
             label={noJourneyContent?.buttonLabel || "Choose Your Journey"}
             onPress={() => navigation.navigate("Journey")}
+            onSkip={onSkipJourney}
           />
         </ScrollView>
       </Screen>
     );
   }
 
-  if (!startedToday) {
+  if (hasJourney && !startedToday) {
     return (
       <Screen>
         <ScrollView
@@ -164,8 +181,8 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
-  const quote = data.quotes?.[0];
-  const showTodayQuote = quote && (!todayQuoteContent || todayQuoteContent.isEnabled);
+  const quote = data?.quotes?.[0];
+  const showTodayQuote = hasJourney && quote && (!todayQuoteContent || todayQuoteContent.isEnabled);
   const dayLabel = data?.dayLabel || "Day";
 
   return (
@@ -188,22 +205,33 @@ export default function HomeScreen({ navigation }) {
           <HeaderMenu navigation={navigation} />
         </View>
 
-        <Pressable onPress={() => navigation.navigate("Journey")}>
-          <Card style={{ marginBottom: showTodayQuote ? 20 : 28 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>
-                {dayLabel} {data?.currentDay} of {data?.totalDays}
-              </Text>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "700", marginRight: 4 }}>
-                  {Math.round(((data?.currentDay || 0) / (data?.totalDays || 1)) * 100)}%
+        {hasJourney ? (
+          <Pressable onPress={() => navigation.navigate("Journey")}>
+            <Card style={{ marginBottom: showTodayQuote ? 20 : 28 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>
+                  {dayLabel} {data?.currentDay} of {data?.totalDays}
                 </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "700", marginRight: 4 }}>
+                    {Math.round(((data?.currentDay || 0) / (data?.totalDays || 1)) * 100)}%
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+                </View>
               </View>
-            </View>
-            <ProgressBar progress={(data?.currentDay || 0) / (data?.totalDays || 1)} />
-          </Card>
-        </Pressable>
+              <ProgressBar progress={(data?.currentDay || 0) / (data?.totalDays || 1)} />
+            </Card>
+          </Pressable>
+        ) : (
+          trackerEnabled && (
+            <Pressable onPress={() => navigation.navigate("Journey")}>
+              <Card style={{ marginBottom: 28, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>Choose a recovery journey</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </Card>
+            </Pressable>
+          )
+        )}
 
         <PromoCards cards={promoCards} />
 

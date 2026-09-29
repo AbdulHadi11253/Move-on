@@ -1,92 +1,123 @@
-import { useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import { View, Text, Pressable, Animated, Easing } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "../../theme/ThemeContext";
-import CompassIcon from "./CompassIcon";
 
-const SIZE = 200;
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const SIZE = 220;
+const STROKE = 10;
+const RADIUS = (SIZE - STROKE) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const DURATION = 2800;
 
-function PulseRing({ delay, colors }) {
-  const anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(anim, { toValue: 1, duration: 2200, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
-
-  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.25] });
-  const opacity = anim.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.5, 0] });
-
-  return (
-    <Animated.View
-      style={{
-        position: "absolute",
-        width: SIZE,
-        height: SIZE,
-        borderRadius: SIZE / 2,
-        borderWidth: 2,
-        borderColor: colors.accent,
-        transform: [{ scale }],
-        opacity,
-      }}
-    />
-  );
-}
-
-export default function ChooseJourneyButton({ onPress, label = "Choose Your Journey" }) {
+// Long-press control matching StartRecoveryButton's design/interaction, used
+// wherever the user needs to commit to picking a journey (Home/Progress empty
+// states). A simple tap here made it too easy to land on the journey picker
+// by accident.
+export default function ChooseJourneyButton({ onPress, onSkip, label = "Choose Your Journey" }) {
   const { colors } = useTheme();
-  const breathe = useRef(new Animated.Value(0)).current;
+  const [percent, setPercent] = useState(0);
+  const progress = useRef(new Animated.Value(0)).current;
+  const completedRef = useRef(false);
+  const lastHapticStep = useRef(0);
+  const listenerIdRef = useRef(null);
 
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breathe, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(breathe, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
+  const holdIn = () => {
+    completedRef.current = false;
+    lastHapticStep.current = 0;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-  const innerScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
+    listenerIdRef.current = progress.addListener(({ value }) => {
+      const pct = Math.round(value * 100);
+      setPercent(pct);
+      const step = Math.floor(pct / 8);
+      if (step > lastHapticStep.current) {
+        lastHapticStep.current = step;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      }
+    });
 
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onPress?.();
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: DURATION,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (listenerIdRef.current !== null) {
+        progress.removeListener(listenerIdRef.current);
+        listenerIdRef.current = null;
+      }
+      if (finished) {
+        completedRef.current = true;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        onPress?.();
+      }
+    });
   };
 
-  return (
-    <View style={{ width: SIZE, height: SIZE, alignItems: "center", justifyContent: "center" }}>
-      <PulseRing delay={0} colors={colors} />
-      <PulseRing delay={1100} colors={colors} />
+  const holdOut = () => {
+    if (completedRef.current) return;
+    progress.stopAnimation();
+    if (listenerIdRef.current !== null) {
+      progress.removeListener(listenerIdRef.current);
+      listenerIdRef.current = null;
+    }
+    progress.setValue(0);
+    setPercent(0);
+  };
 
-      <Animated.View style={{ transform: [{ scale: innerScale }] }}>
+  const strokeDashoffset = progress.interpolate({ inputRange: [0, 1], outputRange: [CIRCUMFERENCE, 0] });
+  const stageLabel = percent >= 100 ? "Let's go" : percent >= 25 ? "Keep holding..." : label;
+
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: SIZE, height: SIZE, alignItems: "center", justifyContent: "center" }}>
+        <Svg width={SIZE} height={SIZE} style={{ position: "absolute" }}>
+          <Circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} stroke={colors.surfaceAlt} strokeWidth={STROKE} fill="none" />
+          <AnimatedCircle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={RADIUS}
+            stroke={colors.accent}
+            strokeWidth={STROKE}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${CIRCUMFERENCE}, ${CIRCUMFERENCE}`}
+            strokeDashoffset={strokeDashoffset}
+            rotation="-90"
+            origin={`${SIZE / 2}, ${SIZE / 2}`}
+          />
+        </Svg>
+
         <Pressable
-          onPress={handlePress}
+          onPressIn={holdIn}
+          onPressOut={holdOut}
           style={{
-            width: SIZE - 36,
-            height: SIZE - 36,
-            borderRadius: (SIZE - 36) / 2,
+            width: SIZE - STROKE * 3,
+            height: SIZE - STROKE * 3,
+            borderRadius: (SIZE - STROKE * 3) / 2,
             backgroundColor: colors.accentSoft,
             borderWidth: 1,
             borderColor: colors.accent,
             alignItems: "center",
             justifyContent: "center",
+            paddingHorizontal: 16,
           }}
         >
-          <CompassIcon size={36} color={colors.accent} />
-          <Text style={{ color: colors.accent, fontSize: 15, fontWeight: "700", marginTop: 10, textAlign: "center", paddingHorizontal: 12 }}>
-            {label}
-          </Text>
+          <Text style={{ color: colors.accent, fontSize: 15, fontWeight: "700", textAlign: "center" }}>{stageLabel}</Text>
         </Pressable>
-      </Animated.View>
+      </View>
+
+      <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 20, textAlign: "center" }}>
+        Press and hold to choose your journey
+      </Text>
+
+      {onSkip && (
+        <Pressable onPress={onSkip} hitSlop={10} style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: "600" }}>Start later</Text>
+        </Pressable>
+      )}
     </View>
   );
 }

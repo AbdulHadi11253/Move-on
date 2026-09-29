@@ -2,21 +2,32 @@ const { randomUUID } = require("crypto");
 const { withAdmin } = require("../../lib/auth");
 const { supabase, QUOTE_IMAGES_BUCKET } = require("../../lib/supabase");
 
-// Generic single-image upload for admin-authored content (notification
-// images, app content blocks) — not quote posts. Same base64-JSON approach as
-// routes/admin/quote-posts/upload.js (see that file for why: RN's fetch()
-// can't reliably read local file:// URIs on this SDK).
+const ALLOWED_FOLDERS = new Set(["notifications", "quotes"]);
+
+// Generic single-image upload for all admin-authored images (quote posts,
+// notification images, app content blocks). Always one image per request —
+// Vercel Serverless Functions hard-cap the request body at 4.5MB regardless
+// of any express.json() limit, so batching several photos into one request
+// (the old routes/admin/quote-posts/upload.js behavior) would eventually 413
+// on any real carousel. The client uploads each image with its own request
+// and assembles the resulting URLs itself.
+//
+// Base64-in-JSON rather than multipart/form-data because React Native's
+// fetch()/Blob/FormData stack on this SDK can't reliably read local file://
+// URIs (silently returns a few-byte stub instead of the real file) and also
+// rejects data: URIs outright ("unknown protocol: data").
 module.exports = withAdmin(async (req, res) => {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  const { base64, mimeType } = req.body || {};
+  const { base64, mimeType, folder } = req.body || {};
   if (!mimeType?.startsWith("image/") || typeof base64 !== "string" || base64.length === 0) {
     res.status(400).json({ error: "A valid image (mimeType + base64) is required" });
     return;
   }
+  const dir = ALLOWED_FOLDERS.has(folder) ? folder : "notifications";
 
   const buffer = Buffer.from(base64, "base64");
   if (buffer.length === 0) {
@@ -25,7 +36,7 @@ module.exports = withAdmin(async (req, res) => {
   }
 
   const ext = mimeType.split("/")[1] || "jpg";
-  const path = `notifications/${randomUUID()}.${ext}`;
+  const path = `${dir}/${randomUUID()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(QUOTE_IMAGES_BUCKET)

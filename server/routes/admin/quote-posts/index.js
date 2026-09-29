@@ -16,9 +16,11 @@ module.exports = withAdmin(async (req, res) => {
   }
 
   if (req.method === "POST") {
-    const { images, categoryId, commentsEnabled, isPopular, showOnHome } = req.body || {};
-    if (!Array.isArray(images) || images.length === 0) {
-      res.status(400).json({ error: "images must be a non-empty array of { url, path }" });
+    const { images, text, categoryId, commentsEnabled, isPopular, showOnHome } = req.body || {};
+    const hasImages = Array.isArray(images) && images.length > 0;
+    const hasText = typeof text === "string" && text.trim().length > 0;
+    if (!hasImages && !hasText) {
+      res.status(400).json({ error: "Provide either images (non-empty array of { url, path }) or text" });
       return;
     }
 
@@ -28,14 +30,13 @@ module.exports = withAdmin(async (req, res) => {
     const created = await prisma.quotePost.create({
       data: {
         categoryId: categoryId || null,
+        text: hasImages ? null : text.trim(),
         commentsEnabled: commentsEnabled !== undefined ? commentsEnabled : true,
         isPopular: !!isPopular,
         showOnHome: !!showOnHome,
         order: (last?.order || 0) + 1,
         homeOrder: (lastHome?.homeOrder || 0) + 1,
-        images: {
-          create: images.map((img, i) => ({ imageUrl: img.url, imagePath: img.path, order: i })),
-        },
+        images: hasImages ? { create: images.map((img, i) => ({ imageUrl: img.url, imagePath: img.path, order: i })) } : undefined,
       },
       include: { category: true, images: { orderBy: { order: "asc" } } },
     });

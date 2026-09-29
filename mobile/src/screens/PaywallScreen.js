@@ -195,9 +195,20 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
           </Pressable>
         </View>
 
-        <Pressable onPress={setContinuedFree} hitSlop={8} style={{ marginTop: 22, alignItems: "center" }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: "600" }}>Continue for free</Text>
-          <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>With ads. Upgrade anytime.</Text>
+        <Pressable
+          onPress={setContinuedFree}
+          style={{
+            marginTop: 22,
+            borderRadius: 16,
+            paddingVertical: 14,
+            alignItems: "center",
+            borderWidth: 1.5,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
+          <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "700" }}>Continue with limited features</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 3 }}>Free, with ads. Upgrade anytime.</Text>
         </Pressable>
 
         <Pressable onPress={() => signOut()} hitSlop={8} style={{ marginTop: 18, alignItems: "center" }}>

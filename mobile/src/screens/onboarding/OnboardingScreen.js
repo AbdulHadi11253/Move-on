@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
+import { View, Text, Pressable, TextInput, ActivityIndicator, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { publicFetch } from "../../lib/api";
 import { useOnboardingStore } from "../../state/onboardingStore";
@@ -165,7 +156,6 @@ export default function OnboardingScreen({ onComplete, onNoQuestions, onHaveAcco
 
   return (
     <Screen>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <Pressable onPress={goBack} hitSlop={12} style={{ opacity: step === 0 ? 0 : 1 }}>
@@ -279,7 +269,6 @@ export default function OnboardingScreen({ onComplete, onNoQuestions, onHaveAcco
             </Pressable>
           )}
         </View>
-      </KeyboardAvoidingView>
     </Screen>
   );
 }

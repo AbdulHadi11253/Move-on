@@ -191,6 +191,9 @@ export default function RootNavigator() {
     screens = (
       <>
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="Paywall">
+          {(props) => <PaywallScreen {...props} onSubscribed={(subscription) => setMe({ ...me, subscription })} />}
+        </Stack.Screen>
         <Stack.Screen name="Admin" component={AdminNavigator} />
         <Stack.Screen name="QuotesExplore" component={QuotesExploreScreen} />
         <Stack.Screen name="CategoryQuotes" component={CategoryQuotesScreen} />

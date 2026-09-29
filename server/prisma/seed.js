@@ -82,6 +82,20 @@ const APP_CONTENT = [
     subtitle: null,
     buttonLabel: null,
   },
+  {
+    key: "ads_enabled",
+    label: "Ads — Global Toggle",
+    title: null,
+    subtitle: null,
+    buttonLabel: null,
+  },
+  {
+    key: "tracker_enabled",
+    label: "Move On Tracker (Journeys/Progress) — Global Toggle for New Users",
+    title: null,
+    subtitle: null,
+    buttonLabel: null,
+  },
 ];
 
 const LESSONS = [

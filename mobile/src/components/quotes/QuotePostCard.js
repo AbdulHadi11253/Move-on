@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, Image, Pressable, FlatList, Dimensions, Share } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { useTheme } from "../../theme/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -53,16 +54,28 @@ export default function QuotePostCard({
 }) {
   const { colors } = useTheme();
   const [index, setIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
   const width = cardWidth || SCREEN_WIDTH - 40;
 
   const images = post.images || [];
+  const isText = images.length === 0 && !!post.text;
   const isCarousel = images.length > 1;
   const slides = showReadMore ? [...images, { __readMore: true }] : images;
   const totalSlides = slides.length;
 
   const onShare = () => {
+    if (isText) {
+      Share.share({ message: post.text });
+      return;
+    }
     const uri = images[0]?.imageUrl;
     Share.share({ url: uri, message: uri });
+  };
+
+  const onCopy = async () => {
+    await Clipboard.setStringAsync(post.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -78,25 +91,43 @@ export default function QuotePostCard({
         style,
       ]}
     >
-      <View style={{ width, height: imageHeight }}>
-        <FlatList
-          data={slides}
-          keyExtractor={(item, i) => (item.__readMore ? "read-more" : item.id || String(i))}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          scrollEnabled={isCarousel || showReadMore}
-          onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
-          renderItem={({ item }) =>
-            item.__readMore ? (
-              <ReadMoreSlide width={width} height={imageHeight} colors={colors} onPress={() => onReadMore?.(post)} />
-            ) : (
-              <Image source={{ uri: item.imageUrl }} style={{ width, height: imageHeight }} resizeMode="cover" />
-            )
-          }
-        />
+      {isText ? (
+        <View
+          style={{
+            width,
+            minHeight: 200,
+            backgroundColor: colors.accentSoft,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 28,
+            paddingVertical: 36,
+          }}
+        >
+          <Ionicons name="sparkles" size={18} color={colors.accent} style={{ marginBottom: 14 }} />
+          <Text style={{ color: colors.textPrimary, fontSize: 19, lineHeight: 28, fontWeight: "600", textAlign: "center" }}>
+            {post.text}
+          </Text>
+        </View>
+      ) : (
+        <View style={{ width, height: imageHeight }}>
+          <FlatList
+            data={slides}
+            keyExtractor={(item, i) => (item.__readMore ? "read-more" : item.id || String(i))}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={isCarousel || showReadMore}
+            onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
+            renderItem={({ item }) =>
+              item.__readMore ? (
+                <ReadMoreSlide width={width} height={imageHeight} colors={colors} onPress={() => onReadMore?.(post)} />
+              ) : (
+                <Image source={{ uri: item.imageUrl }} style={{ width, height: imageHeight }} resizeMode="cover" />
+              )
+            }
+          />
 
-        {totalSlides > 1 && (
+          {totalSlides > 1 && (
           <View
             style={{
               position: "absolute",
@@ -139,7 +170,8 @@ export default function QuotePostCard({
             ))}
           </View>
         )}
-      </View>
+        </View>
+      )}
 
       <View
         style={{
@@ -164,9 +196,18 @@ export default function QuotePostCard({
             </Pressable>
           )}
 
-          <Pressable onPress={onShare} style={{ flexDirection: "row", alignItems: "center" }}>
+          <Pressable onPress={onShare} style={{ flexDirection: "row", alignItems: "center", marginRight: isText ? 22 : 0 }}>
             <Ionicons name="paper-plane-outline" size={19} color={colors.textSecondary} />
           </Pressable>
+
+          {isText && (
+            <Pressable onPress={onCopy} style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name={copied ? "checkmark" : "copy-outline"} size={19} color={copied ? colors.accent : colors.textSecondary} />
+              <Text style={{ color: copied ? colors.accent : colors.textSecondary, fontSize: 13, marginLeft: 6, fontWeight: "500" }}>
+                {copied ? "Copied" : "Copy"}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         <Pressable onPress={() => onToggleSave(post)}>

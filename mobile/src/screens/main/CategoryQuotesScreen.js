@@ -34,6 +34,12 @@ export default function CategoryQuotesScreen({ route, navigation }) {
 
   const { toggleSave, openComments, closeComments, commentsPost, refreshKeys } = useQuotePostActions([queryKey]);
 
+  const displayMode = category.displayMode || "BOTH";
+  const shownPosts =
+    displayMode === "BOTH"
+      ? posts
+      : (posts || []).filter((p) => (displayMode === "TEXT" ? p.images.length === 0 : p.images.length > 0));
+
   return (
     <Screen>
       <AdminHeader title={category.name} onBack={() => navigation.goBack()} />
@@ -91,7 +97,7 @@ export default function CategoryQuotesScreen({ route, navigation }) {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={shownPosts}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
           renderItem={({ item }) => (

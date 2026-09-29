@@ -203,13 +203,29 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons name="card-outline" size={18} color={colors.textSecondary} />
-              <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10 }}>Subscription</Text>
+          {["TRIAL", "ACTIVE"].includes(me?.subscription?.status) ? (
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="card-outline" size={18} color={colors.textSecondary} />
+                <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10 }}>Subscription</Text>
+              </View>
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>{me.subscription.status}</Text>
             </View>
-            <Text style={{ color: colors.textMuted, fontSize: 13 }}>{me?.subscription?.status || "None"}</Text>
-          </View>
+          ) : (
+            <Pressable
+              onPress={() => navigation.navigate("Paywall")}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="sparkles" size={18} color={colors.accent} />
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={{ color: colors.accent, fontSize: 15, fontWeight: "700" }}>Upgrade Now</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>Unlock all features + ad-free</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </Pressable>
+          )}
         </Card>
 
         <Text

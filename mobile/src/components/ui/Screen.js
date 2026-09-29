@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { View, KeyboardAvoidingView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../theme/ThemeContext";
@@ -13,9 +13,12 @@ export default function Screen({ children, edges = ["top", "bottom"], style }) {
   const paddingBottom = edges.includes("bottom") ? insets.bottom : 0;
 
   return (
-    <View style={[{ flex: 1, backgroundColor: colors.background, paddingTop, paddingBottom }, style]}>
+    <KeyboardAvoidingView
+      style={[{ flex: 1, backgroundColor: colors.background, paddingTop, paddingBottom }, style]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <StatusBar style={theme.statusBar} />
       {children}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

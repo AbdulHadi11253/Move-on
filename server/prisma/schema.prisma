@@ -33,6 +33,15 @@ enum SubscriptionPlan {
   YEARLY
 }
 
+// What a QuoteCategory shows when browsed: text-based quote cards, image
+// posts, or both interleaved. Purely a display filter — doesn't affect which
+// posts belong to the category.
+enum CategoryDisplayMode {
+  TEXT
+  IMAGE
+  BOTH
+}
+
 model User {
   id                 String   @id @default(uuid())
   clerkId            String   @unique
@@ -319,24 +328,27 @@ model UserAffirmationSubscription {
 }
 
 model QuoteCategory {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id          String              @id @default(uuid())
+  name        String              @unique
+  order       Int                 @default(0)
+  isActive    Boolean             @default(true)
+  displayMode CategoryDisplayMode @default(BOTH)
+  createdAt   DateTime            @default(now())
 
   posts QuotePost[]
 }
 
-// Image-based quote posts, uploaded by admin and stored in Supabase Storage.
-// A post with exactly one image renders as a Single Post; a post with 2+
-// images renders as a swipeable Carousel — the type is derived from image
-// count, not stored, so admin just picks one or many images at upload time.
+// Image-based or text-based quote posts, uploaded by admin. A post with
+// `text` set and no images is a text-based quote card; otherwise it's image-
+// based — exactly one image renders as a Single Post, 2+ as a swipeable
+// Carousel. Type is derived (from `text`/image count), not stored, so admin
+// just picks a mode at creation time.
 // Distinct from the text-based Quote model used inside journey days / Today's Quote.
 model QuotePost {
   id              String         @id @default(uuid())
   categoryId      String?
   category        QuoteCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  text            String?
   commentsEnabled Boolean        @default(true)
   isPopular       Boolean        @default(false)
   order           Int            @default(0)

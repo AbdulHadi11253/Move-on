@@ -5,10 +5,11 @@ module.exports = withAdmin(async (req, res) => {
   const { id } = req.query;
 
   if (req.method === "PATCH") {
-    const { name, isActive } = req.body || {};
+    const { name, isActive, displayMode } = req.body || {};
     const data = {};
     if (name !== undefined) data.name = name.trim();
     if (isActive !== undefined) data.isActive = isActive;
+    if (displayMode !== undefined) data.displayMode = displayMode;
     const updated = await prisma.quoteCategory.update({ where: { id }, data });
     res.status(200).json(updated);
     return;
