@@ -78,10 +78,12 @@ export default function HomeScreen({ navigation }) {
   const { data: categories } = useQuery({
     queryKey: ["quote-categories"],
     queryFn: () => api("/api/quote-categories"),
+    staleTime: 5 * 60 * 1000,
   });
   const { data: promoCards } = useQuery({
     queryKey: ["promo-cards"],
     queryFn: () => api("/api/promo-cards"),
+    staleTime: 5 * 60 * 1000,
   });
 
   const quotePostKeys = [["quote-posts", "home-carousel"], ["quote-posts", "home-single"]];

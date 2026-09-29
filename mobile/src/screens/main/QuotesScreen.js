@@ -27,6 +27,7 @@ export default function QuotesScreen({ navigation }) {
   const { data: categories } = useQuery({
     queryKey: ["quote-categories"],
     queryFn: () => api("/api/quote-categories"),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { refreshing, onRefresh } = usePullRefresh([["quotes"], ["quote-categories"], ["quote-posts", "popular"]]);

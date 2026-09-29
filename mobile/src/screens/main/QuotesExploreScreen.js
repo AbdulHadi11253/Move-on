@@ -21,6 +21,7 @@ export default function QuotesExploreScreen({ navigation }) {
   const { data: categories } = useQuery({
     queryKey: ["quote-categories"],
     queryFn: () => api("/api/quote-categories"),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { toggleSave, openComments, closeComments, commentsPost, refreshKeys } = useQuotePostActions([postsKey]);
