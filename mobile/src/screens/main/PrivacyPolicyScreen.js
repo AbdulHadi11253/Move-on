@@ -13,7 +13,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
     <Screen>
       <AdminHeader title="Privacy Policy" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: 8 }}>Last updated: Insert date</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: 8 }}>Last updated: September 30, 2026</Text>
 
         <Text style={[BODY, { color: colors.textSecondary }]}>
           This Privacy Policy explains how Move On ("we", "us") collects, uses, and protects your information
@@ -22,36 +22,65 @@ export default function PrivacyPolicyScreen({ navigation }) {
 
         <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Information We Collect</Text>
         <Text style={[BODY, { color: colors.textSecondary }]}>
-          Account information (such as your name and email address), onboarding responses, journey progress,
-          content you save or comment on, and basic device/usage information needed to operate the app.
+          Account information such as your name, email address, age, and gender; your onboarding responses;
+          journey and progress data (current day, streak, completed tasks); content you save, comment on, or
+          submit; your notification and appearance preferences; and subscription status. If you sign in with
+          Apple or Google, we receive the name and email your account provides. We do not access your photos or
+          media except when you deliberately choose one to upload (admin accounts only).
         </Text>
 
         <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>How We Use Your Information</Text>
         <Text style={[BODY, { color: colors.textSecondary }]}>
-          To provide and personalize your recovery journey, sync your progress across sessions, send the
-          notifications you've opted into, and improve the app.
+          To create and secure your account, provide and personalize your recovery journey, sync your progress
+          across sessions and devices, send the notifications you've opted into, process subscription purchases,
+          and maintain and improve the app.
         </Text>
 
         <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Data Sharing</Text>
         <Text style={[BODY, { color: colors.textSecondary }]}>
-          We do not sell your personal information. We use trusted third-party services (such as our
-          authentication, database, and storage providers) solely to operate the app.
+          We do not sell your personal information. We share data only with service providers who help us
+          operate the app, each acting under their own privacy terms:
+        </Text>
+        <Text style={[BODY, { color: colors.textSecondary, marginTop: 6 }]}>
+          • Clerk — authentication and account sign-in{"\n"}
+          • Neon (PostgreSQL) — our application database{"\n"}
+          • Supabase — storage for images you or admins upload{"\n"}
+          • RevenueCat, Apple, and Google — subscription purchases and billing{"\n"}
+          • Google AdMob — advertising for users on the free, ad-supported tier (subscribers see no ads).
+          AdMob may use device identifiers to personalize ads; you can opt out of ad tracking in your device
+          settings and are asked for permission the first time ads are shown{"\n"}
+          • Apple/Google push notification services — delivering the reminders you enable
+        </Text>
+
+        <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Data Retention</Text>
+        <Text style={[BODY, { color: colors.textSecondary }]}>
+          We retain your account data for as long as your account is active. If you delete your account, your
+          profile, journey progress, saved content, and comments are permanently deleted from our database. Some
+          information may be retained where required by law (for example, records of a completed purchase).
         </Text>
 
         <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Your Choices</Text>
         <Text style={[BODY, { color: colors.textSecondary }]}>
-          You can edit your profile, manage notification preferences, or delete your account at any time by
-          contacting us.
+          You can edit your profile, manage notification and appearance preferences, and permanently delete your
+          account and all associated data at any time from Profile → Delete Account, or by contacting us below.
+        </Text>
+
+        <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Children's Privacy</Text>
+        <Text style={[BODY, { color: colors.textSecondary }]}>
+          Move On is not directed to children under 13, and we do not knowingly collect information from
+          children under 13.
+        </Text>
+
+        <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Changes to This Policy</Text>
+        <Text style={[BODY, { color: colors.textSecondary }]}>
+          We may update this policy from time to time. Continued use of the app after a change means you accept
+          the updated policy.
         </Text>
 
         <Text style={[SECTION_TITLE, { color: colors.textPrimary }]}>Contact</Text>
         <Text style={[BODY, { color: colors.textSecondary }]}>
-          Questions about this policy can be sent to Insert support email.
-        </Text>
-
-        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 24, fontStyle: "italic" }}>
-          This is placeholder text. Please have a legal professional review and finalize this policy before
-          publishing the app to the App Store or Google Play.
+          Questions about this policy, or requests to access or delete your data, can be sent to{" "}
+          ptechagency@gmail.com.
         </Text>
       </ScrollView>
     </Screen>
