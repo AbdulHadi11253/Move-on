@@ -302,13 +302,16 @@ function JourneyDayRow({
           />
         )}
       </View>
-      <View style={{ flex: 1, paddingBottom: 22 }}>
-        <Text style={{ color: locked ? colors.textMuted : colors.textPrimary, fontSize: 15, fontWeight: "600" }}>
-          {dayLabel} {dayNumber}
-        </Text>
-        <Text style={{ color: locked ? colors.textMuted : colors.textSecondary, fontSize: 12, marginTop: 2 }}>
-          {done ? "Completed" : active ? "Today" : "Locked"}
-        </Text>
+      <View style={{ flex: 1, paddingBottom: 22, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: locked ? colors.textMuted : colors.textPrimary, fontSize: 15, fontWeight: "600" }}>
+            {dayLabel} {dayNumber}
+          </Text>
+          <Text style={{ color: locked ? colors.textMuted : colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+            {done ? "Completed" : active ? "Today" : "Locked"}
+          </Text>
+        </View>
+        {!locked && <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />}
       </View>
     </Pressable>
   );

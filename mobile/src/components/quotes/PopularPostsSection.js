@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
 import { useQuotePostActions } from "../../lib/useQuotePostActions";
+import { useContentBlock } from "../../lib/useAppContent";
 import Screen from "../ui/Screen";
 import AdminHeader from "../admin/AdminHeader";
 import QuotePostCard from "./QuotePostCard";
@@ -27,11 +28,16 @@ export default function PopularPostsSection({ navigation }) {
   });
 
   const { toggleSave, openComments, closeComments, commentsPost, refreshKeys } = useQuotePostActions([queryKey]);
+  const displayMode = useContentBlock("home_quote_display_mode")?.title || "BOTH";
 
-  if (isLoading || !posts || posts.length === 0) return null;
+  const filteredPosts = (posts || []).filter((p) =>
+    displayMode === "TEXT" ? p.images.length === 0 : displayMode === "IMAGE" ? p.images.length > 0 : true
+  );
 
-  const preview = posts.slice(0, PREVIEW_COUNT);
-  const remaining = posts.length - preview.length;
+  if (isLoading || filteredPosts.length === 0) return null;
+
+  const preview = filteredPosts.slice(0, PREVIEW_COUNT);
+  const remaining = filteredPosts.length - preview.length;
 
   return (
     <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
@@ -61,7 +67,28 @@ export default function PopularPostsSection({ navigation }) {
                 overflow: "hidden",
               }}
             >
-              <Image source={{ uri: post.images[0]?.imageUrl }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+              {post.images.length === 0 ? (
+                <View
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    backgroundColor: colors.accentSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 10,
+                  }}
+                >
+                  <Ionicons name="sparkles" size={14} color={colors.accent} style={{ marginBottom: 6 }} />
+                  <Text
+                    style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "600", textAlign: "center" }}
+                    numberOfLines={4}
+                  >
+                    {post.text}
+                  </Text>
+                </View>
+              ) : (
+                <Image source={{ uri: post.images[0]?.imageUrl }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+              )}
               {post.images.length > 1 && (
                 <View style={{ position: "absolute", top: 8, right: 8 }}>
                   <Ionicons name="copy-outline" size={16} color="#FFFFFF" />

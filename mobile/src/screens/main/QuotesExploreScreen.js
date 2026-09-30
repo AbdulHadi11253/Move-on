@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
 import { useQuotePostActions } from "../../lib/useQuotePostActions";
+import { useContentBlock } from "../../lib/useAppContent";
 import Screen from "../../components/ui/Screen";
 import AdminHeader from "../../components/admin/AdminHeader";
 import CategoriesRow from "../../components/home/CategoriesRow";
@@ -25,6 +26,10 @@ export default function QuotesExploreScreen({ navigation }) {
   });
 
   const { toggleSave, openComments, closeComments, commentsPost, refreshKeys } = useQuotePostActions([postsKey]);
+  const displayMode = useContentBlock("home_quote_display_mode")?.title || "BOTH";
+  const filteredPosts = (posts || []).filter((p) =>
+    displayMode === "TEXT" ? p.images.length === 0 : displayMode === "IMAGE" ? p.images.length > 0 : true
+  );
 
   return (
     <Screen>
@@ -36,7 +41,7 @@ export default function QuotesExploreScreen({ navigation }) {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
           ListHeaderComponent={

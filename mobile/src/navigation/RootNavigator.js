@@ -146,6 +146,19 @@ export default function RootNavigator() {
     </>
   );
 
+  // React Navigation keeps its internal nav state (including which route is
+  // focused) across re-renders of the same <Stack.Navigator> instance, even
+  // when the set of <Stack.Screen>s it's given changes — so swapping from
+  // e.g. "Paywall" to "MainTabs" here doesn't actually navigate anywhere on
+  // its own; the navigator just keeps pointing at a route that no longer
+  // exists. Keying the navigator by phase forces a full remount on every
+  // transition, which resets to the new phase's first screen.
+  let phaseKey;
+  if (!isSignedIn) phaseKey = questionsDone ? "signin" : "onboarding";
+  else if (!me?.onboardingComplete) phaseKey = hasAnswers ? "submit-answers" : "onboarding-post-signin";
+  else if (needsPaywall) phaseKey = "paywall";
+  else phaseKey = "app";
+
   let screens;
   if (!isSignedIn) {
     screens = questionsDone ? (
@@ -206,7 +219,9 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>{screens}</Stack.Navigator>
+      <Stack.Navigator key={phaseKey} screenOptions={{ headerShown: false }}>
+        {screens}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

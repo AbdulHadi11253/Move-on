@@ -30,7 +30,7 @@ export default function MainTabs() {
   const { data: content, isLoading } = useQuery({
     queryKey: ["app-content"],
     queryFn: () => api("/api/content"),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
   // Only spares users who already have an active journey — checked inside
   // JourneyScreen/ProgressScreen, not here, since this hook has no journey

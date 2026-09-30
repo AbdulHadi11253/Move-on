@@ -7,6 +7,7 @@ import { useApi } from "../lib/useApi";
 import { loadPackages, purchase, restore } from "../lib/purchases";
 import { useTheme } from "../theme/ThemeContext";
 import { useAdsStore } from "../state/adsStore";
+import { resetAppState } from "../lib/resetAppState";
 import Screen from "../components/ui/Screen";
 
 const BENEFITS = [
@@ -47,6 +48,11 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
       // ads switch off immediately instead of waiting for its next refetch.
       queryClient.invalidateQueries({ queryKey: ["me"] });
       onSubscribed(sub);
+      // Reached via "Upgrade Now" from inside the app (Paywall pushed on top
+      // of MainTabs) rather than as the blocking post-onboarding screen —
+      // there, RootNavigator's phase never changes (still "app"), so nothing
+      // else navigates us away. No-ops when there's nothing to go back to.
+      if (navigation.canGoBack()) navigation.goBack();
     } else {
       Alert.alert("Not active yet", "We couldn't confirm your subscription yet. Please try Restore in a moment.");
     }
@@ -81,6 +87,11 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
   };
 
   const price = (key) => packages[key]?.product?.priceString || PLANS[key].fallbackPrice;
+
+  const continueFree = () => {
+    setContinuedFree();
+    if (navigation.canGoBack()) navigation.goBack();
+  };
 
   return (
     <Screen>
@@ -196,22 +207,27 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
         </View>
 
         <Pressable
-          onPress={setContinuedFree}
+          onPress={continueFree}
           style={{
             marginTop: 22,
             borderRadius: 16,
-            paddingVertical: 14,
+            paddingVertical: 16,
             alignItems: "center",
-            borderWidth: 1.5,
-            borderColor: colors.border,
-            backgroundColor: colors.surface,
+            backgroundColor: colors.accent,
           }}
         >
-          <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "700" }}>Continue with limited features</Text>
-          <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 3 }}>Free, with ads. Upgrade anytime.</Text>
+          <Text style={{ color: colors.accentText, fontSize: 16, fontWeight: "700" }}>Continue with limited features</Text>
+          <Text style={{ color: colors.accentText, fontSize: 12, marginTop: 3, opacity: 0.85 }}>Free, with ads. Upgrade anytime.</Text>
         </Pressable>
 
-        <Pressable onPress={() => signOut()} hitSlop={8} style={{ marginTop: 18, alignItems: "center" }}>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            await resetAppState();
+          }}
+          hitSlop={8}
+          style={{ marginTop: 18, alignItems: "center" }}
+        >
           <Text style={{ color: colors.textMuted, fontSize: 13 }}>Sign out</Text>
         </Pressable>
       </ScrollView>

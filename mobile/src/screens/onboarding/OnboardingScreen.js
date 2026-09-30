@@ -1,17 +1,50 @@
-import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, TextInput, ActivityIndicator, ScrollView } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, Pressable, TextInput, ActivityIndicator, ScrollView, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { publicFetch } from "../../lib/api";
 import { useOnboardingStore } from "../../state/onboardingStore";
 import { useTheme } from "../../theme/ThemeContext";
 import Screen from "../../components/ui/Screen";
 
+function IntroThemePicker({ colors, themeKey, setTheme, themes }) {
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, width: "100%" }}>
+      {themes.map((t) => {
+        const active = t.key === themeKey;
+        return (
+          <Pressable key={t.key} onPress={() => setTheme(t.key)} style={{ width: "50%", padding: 4 }}>
+            <View
+              style={{
+                borderRadius: 14,
+                borderWidth: active ? 2 : 1,
+                borderColor: active ? colors.accent : colors.border,
+                overflow: "hidden",
+                backgroundColor: t.colors.background,
+              }}
+            >
+              <View style={{ flexDirection: "row", padding: 10, alignItems: "center" }}>
+                <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: t.colors.accent, marginRight: 7 }} />
+                <Text style={{ color: t.colors.textPrimary, fontSize: 12, fontWeight: "600" }}>{t.name}</Text>
+              </View>
+              {active && (
+                <View style={{ position: "absolute", top: 6, right: 6 }}>
+                  <Ionicons name="checkmark-circle" size={14} color={t.colors.accent} />
+                </View>
+              )}
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 // Shown before sign-in. Questions come in batches (set by the admin); a short
 // interstitial separates batches. onComplete fires after the final answer,
 // onNoQuestions when none are configured, onHaveAccount lets returning users
 // skip straight to sign-in.
 export default function OnboardingScreen({ onComplete, onNoQuestions, onHaveAccount }) {
-  const { colors } = useTheme();
+  const { colors, themeKey, setTheme, themes } = useTheme();
   const { answers, setAnswer } = useOnboardingStore();
   const [questions, setQuestions] = useState([]);
   const [step, setStep] = useState(0);
@@ -19,6 +52,22 @@ export default function OnboardingScreen({ onComplete, onNoQuestions, onHaveAcco
   const [loadError, setLoadError] = useState(false);
   const [textValue, setTextValue] = useState("");
   const [showIntro, setShowIntro] = useState(false);
+  const introAnim = useRef(new Animated.Value(0)).current;
+  const introPulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!showIntro) return;
+    introAnim.setValue(0);
+    Animated.timing(introAnim, { toValue: 1, duration: 550, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(introPulse, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(introPulse, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [showIntro]);
 
   const loadQuestions = () => {
     setLoading(true);
@@ -118,38 +167,71 @@ export default function OnboardingScreen({ onComplete, onNoQuestions, onHaveAcco
 
   if (showIntro) {
     const upcoming = batches.indexOf(question.batch) + 1;
+    const iconScale = introPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
+    const enterOpacity = introAnim;
+    const enterTranslate = introAnim.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
     return (
       <Screen>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
-          <View
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+          <Animated.View
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 20,
-              backgroundColor: colors.accentSoft,
+              flex: 1,
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 20,
+              paddingHorizontal: 32,
+              paddingVertical: 32,
+              opacity: enterOpacity,
+              transform: [{ translateY: enterTranslate }],
             }}
           >
-            <Ionicons name="sparkles" size={28} color={colors.accent} />
-          </View>
-          <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 }}>
-            PART {upcoming} OF {batches.length}
-          </Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 26, fontWeight: "700", textAlign: "center", marginBottom: 10 }}>
-            A few more questions
-          </Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginBottom: 32 }}>
-            This helps us shape your recovery journey around you.
-          </Text>
-          <Pressable
-            onPress={() => setShowIntro(false)}
-            style={{ backgroundColor: colors.accent, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 48 }}
-          >
-            <Text style={{ color: colors.accentText, fontSize: 15, fontWeight: "600" }}>Continue</Text>
-          </Pressable>
-        </View>
+            <Animated.View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 24,
+                backgroundColor: colors.accentSoft,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 20,
+                transform: [{ scale: iconScale }],
+              }}
+            >
+              <Ionicons name="sparkles" size={32} color={colors.accent} />
+            </Animated.View>
+            <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 }}>
+              PART {upcoming} OF {batches.length}
+            </Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 26, fontWeight: "700", textAlign: "center", marginBottom: 10 }}>
+              A few more questions
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginBottom: 28 }}>
+              This helps us shape your recovery journey around you.
+            </Text>
+
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+                marginBottom: 10,
+                alignSelf: "flex-start",
+                marginLeft: 4,
+              }}
+            >
+              Pick your vibe
+            </Text>
+            <IntroThemePicker colors={colors} themeKey={themeKey} setTheme={setTheme} themes={themes} />
+
+            <Pressable
+              onPress={() => setShowIntro(false)}
+              style={{ backgroundColor: colors.accent, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 48, marginTop: 28 }}
+            >
+              <Text style={{ color: colors.accentText, fontSize: 15, fontWeight: "600" }}>Continue</Text>
+            </Pressable>
+          </Animated.View>
+        </ScrollView>
       </Screen>
     );
   }

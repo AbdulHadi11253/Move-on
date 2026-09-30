@@ -1,6 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useCallback } from "react";
 import { apiFetch } from "./api";
+import { resetAppState } from "./resetAppState";
 
 // A 401 here always means the server rejected the session (missing, expired,
 // or — the known cause of a real bug — a token cached on-device from a
@@ -18,6 +19,7 @@ export function useApi() {
       } catch (err) {
         if (err.status === 401) {
           await signOut().catch(() => {});
+          await resetAppState();
           const sessionErr = new Error("Your session expired. Please sign in again.");
           sessionErr.status = 401;
           throw sessionErr;

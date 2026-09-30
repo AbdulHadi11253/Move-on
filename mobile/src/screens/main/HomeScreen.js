@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../lib/useApi";
@@ -10,7 +10,6 @@ import { useContentBlock } from "../../lib/useAppContent";
 import { usePullRefresh } from "../../lib/usePullRefresh";
 import { useScrollToTop } from "../../lib/useScrollToTop";
 import { useQuotePostActions } from "../../lib/useQuotePostActions";
-import { hasStartedToday, markStartedToday } from "../../lib/recoveryFlag";
 import { hasJourneyDeferred, markJourneyDeferred } from "../../lib/journeyFlag";
 import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
@@ -30,17 +29,16 @@ import ScrollToTopButton from "../../components/ui/ScrollToTopButton";
 
 export default function HomeScreen({ navigation }) {
   const api = useApi();
+  const queryClient = useQueryClient();
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
   const { user } = useUser();
   const { colors } = useTheme();
   const [checkedStorage, setCheckedStorage] = useState(false);
-  const [startedToday, setStartedToday] = useState(false);
   const [deferred, setDeferred] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([hasStartedToday(), hasJourneyDeferred()]).then(([started, skipped]) => {
-        setStartedToday(started);
+      hasJourneyDeferred().then((skipped) => {
         setDeferred(skipped);
         setCheckedStorage(true);
       });
@@ -66,6 +64,10 @@ export default function HomeScreen({ navigation }) {
   const singlePostLimitContent = useContentBlock("home_single_post_limit");
   const carouselLimit = parseInt(carouselLimitContent?.title, 10) || 3;
   const singlePostLimit = parseInt(singlePostLimitContent?.title, 10) || 5;
+  const quoteDisplayModeContent = useContentBlock("home_quote_display_mode");
+  const quoteDisplayMode = quoteDisplayModeContent?.title || "BOTH";
+  const showImagePosts = quoteDisplayMode !== "TEXT";
+  const showTextPosts = quoteDisplayMode !== "IMAGE";
 
   const { data: carouselPosts } = useQuery({
     queryKey: ["quote-posts", "home-carousel"],
@@ -74,6 +76,10 @@ export default function HomeScreen({ navigation }) {
   const { data: singlePosts } = useQuery({
     queryKey: ["quote-posts", "home-single"],
     queryFn: () => api("/api/quote-posts?home=true&type=SINGLE"),
+  });
+  const { data: textPosts } = useQuery({
+    queryKey: ["quote-posts", "home-text"],
+    queryFn: () => api("/api/quote-posts?home=true&type=TEXT"),
   });
   const { data: categories } = useQuery({
     queryKey: ["quote-categories"],
@@ -86,7 +92,7 @@ export default function HomeScreen({ navigation }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const quotePostKeys = [["quote-posts", "home-carousel"], ["quote-posts", "home-single"]];
+  const quotePostKeys = [["quote-posts", "home-carousel"], ["quote-posts", "home-single"], ["quote-posts", "home-text"]];
   const { toggleSave, openComments, closeComments, commentsPost, refreshKeys } = useQuotePostActions(quotePostKeys);
 
   const { refreshing, onRefresh } = usePullRefresh([
@@ -103,8 +109,8 @@ export default function HomeScreen({ navigation }) {
   const displayName = me?.name || user?.firstName || "Friend";
 
   const onRecoveryStarted = async () => {
-    await markStartedToday();
-    setStartedToday(true);
+    await api("/api/users/recovery-started", { method: "POST" });
+    queryClient.setQueryData(["me"], (prev) => (prev ? { ...prev, hasStartedRecovery: true } : prev));
   };
 
   if (isLoading || !checkedStorage) {
@@ -155,7 +161,7 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
-  if (hasJourney && !startedToday) {
+  if (hasJourney && !me?.hasStartedRecovery) {
     return (
       <Screen>
         <ScrollView
@@ -267,20 +273,33 @@ export default function HomeScreen({ navigation }) {
           onSelect={(category) => navigation.navigate("CategoryQuotes", { category })}
         />
 
-        <CarouselQuotesSection
-          posts={carouselPosts}
-          limit={carouselLimit}
-          onToggleSave={toggleSave}
-          onOpenComments={openComments}
-          onReadMore={() => navigation.navigate("QuotesExplore")}
-        />
+        {showImagePosts && (
+          <CarouselQuotesSection
+            posts={carouselPosts}
+            limit={carouselLimit}
+            onToggleSave={toggleSave}
+            onOpenComments={openComments}
+            onReadMore={() => navigation.navigate("QuotesExplore")}
+          />
+        )}
 
-        <SinglePostsSection
-          posts={singlePosts}
-          limit={singlePostLimit}
-          onToggleSave={toggleSave}
-          onOpenComments={openComments}
-        />
+        {showTextPosts && (
+          <SinglePostsSection
+            posts={textPosts}
+            limit={singlePostLimit}
+            onToggleSave={toggleSave}
+            onOpenComments={openComments}
+          />
+        )}
+
+        {showImagePosts && (
+          <SinglePostsSection
+            posts={singlePosts}
+            limit={singlePostLimit}
+            onToggleSave={toggleSave}
+            onOpenComments={openComments}
+          />
+        )}
       </ScrollView>
 
       <CommentsModal post={commentsPost} onClose={closeComments} refreshKeys={refreshKeys} />

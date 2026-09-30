@@ -18,7 +18,7 @@ module.exports = withAuth(async (req, res) => {
   const [updated] = await prisma.$transaction([
     prisma.userJourney.update({
       where: { id: enrollment.id },
-      data: { currentDay: 1, streak: 0, lastActiveAt: new Date() },
+      data: { currentDay: 1, streak: 0, lastActiveAt: new Date(), dayCompletedAt: null },
     }),
     prisma.taskCompletion.deleteMany({ where: { userId: req.user.id, journeyId: enrollment.journeyId } }),
   ]);

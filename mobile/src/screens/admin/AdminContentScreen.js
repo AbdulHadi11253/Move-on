@@ -8,6 +8,13 @@ import AdminHeader from "../../components/admin/AdminHeader";
 import FormField from "../../components/admin/FormField";
 import { pickAndUploadImage } from "../../lib/adminImageUpload";
 
+const QUOTE_DISPLAY_MODE_KEY = "home_quote_display_mode";
+const DISPLAY_MODES = [
+  { key: "BOTH", label: "Both" },
+  { key: "TEXT", label: "Text only" },
+  { key: "IMAGE", label: "Image only" },
+];
+
 export default function AdminContentScreen({ navigation }) {
   const api = useApi();
   const { colors } = useTheme();
@@ -30,6 +37,15 @@ export default function AdminContentScreen({ navigation }) {
   const toggleEnabled = async (block) => {
     try {
       await api(`/api/content/${block.id}`, { method: "PATCH", body: { isEnabled: !block.isEnabled } });
+      refresh();
+    } catch (e) {
+      Alert.alert("Couldn't update", e.message);
+    }
+  };
+
+  const setDisplayMode = async (block, mode) => {
+    try {
+      await api(`/api/content/${block.id}`, { method: "PATCH", body: { title: mode } });
       refresh();
     } catch (e) {
       Alert.alert("Couldn't update", e.message);
@@ -75,24 +91,53 @@ export default function AdminContentScreen({ navigation }) {
           data={blocks}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
-          renderItem={({ item }) => (
-            <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 14 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Pressable onPress={() => openEdit(item)} style={{ flex: 1, marginRight: 12 }}>
-                  <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "500" }}>{item.label}</Text>
-                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }} numberOfLines={1}>
-                    {item.title || item.subtitle || "Tap to edit text"}
-                  </Text>
-                </Pressable>
-                <Switch
-                  value={item.isEnabled}
-                  onValueChange={() => toggleEnabled(item)}
-                  trackColor={{ false: colors.surfaceAlt, true: colors.accent }}
-                  thumbColor="#FFFFFF"
-                />
+          renderItem={({ item }) =>
+            item.key === QUOTE_DISPLAY_MODE_KEY ? (
+              <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 14 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "500", marginBottom: 10 }}>{item.label}</Text>
+                <View style={{ flexDirection: "row" }}>
+                  {DISPLAY_MODES.map((m) => {
+                    const active = (item.title || "BOTH") === m.key;
+                    return (
+                      <Pressable
+                        key={m.key}
+                        onPress={() => setDisplayMode(item, m.key)}
+                        style={{
+                          flex: 1,
+                          marginRight: m.key !== "IMAGE" ? 8 : 0,
+                          borderRadius: 12,
+                          paddingVertical: 10,
+                          alignItems: "center",
+                          backgroundColor: active ? colors.accent : colors.surfaceAlt,
+                        }}
+                      >
+                        <Text style={{ color: active ? colors.accentText : colors.textSecondary, fontSize: 13, fontWeight: "600" }}>
+                          {m.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          )}
+            ) : (
+              <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 14 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Pressable onPress={() => openEdit(item)} style={{ flex: 1, marginRight: 12 }}>
+                    <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "500" }}>{item.label}</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }} numberOfLines={1}>
+                      {item.title || item.subtitle || "Tap to edit text"}
+                    </Text>
+                  </Pressable>
+                  <Switch
+                    value={item.isEnabled}
+                    onValueChange={() => toggleEnabled(item)}
+                    trackColor={{ false: colors.surfaceAlt, true: colors.accent }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+              </View>
+            )
+          }
         />
       )}
 

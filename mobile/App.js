@@ -1,13 +1,12 @@
 import { ClerkProvider } from "@clerk/clerk-expo";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { tokenCache } from "./src/lib/tokenCache";
+import { queryClient } from "./src/lib/queryClient";
 import { ThemeProvider } from "./src/theme/ThemeContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import NetworkBanner from "./src/components/ui/NetworkBanner";
 import ErrorBoundary from "./src/components/ui/ErrorBoundary";
-
-const queryClient = new QueryClient();
 
 export default function App() {
   return (

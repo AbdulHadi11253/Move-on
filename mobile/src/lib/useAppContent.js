@@ -6,7 +6,11 @@ export function useAppContent() {
   const { data } = useQuery({
     queryKey: ["app-content"],
     queryFn: () => api("/api/content"),
-    staleTime: 5 * 60 * 1000,
+    // Drives every admin on/off toggle (ads, tracker, quote display mode,
+    // prompt copy) — a short stale time so a change the admin makes shows up
+    // for users already in the app within moments, not after several minutes.
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
   });
   return data || [];
 }

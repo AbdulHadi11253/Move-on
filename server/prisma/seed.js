@@ -96,6 +96,13 @@ const APP_CONTENT = [
     subtitle: null,
     buttonLabel: null,
   },
+  {
+    key: "home_quote_display_mode",
+    label: "Home & Quotes Tab — Quote Display (Text/Image/Both)",
+    title: "BOTH",
+    subtitle: null,
+    buttonLabel: null,
+  },
 ];
 
 const LESSONS = [

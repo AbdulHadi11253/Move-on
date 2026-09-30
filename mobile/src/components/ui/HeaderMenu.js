@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useUser, useAuth } from "@clerk/clerk-expo";
 import { useTheme } from "../../theme/ThemeContext";
 import { useContentBlock } from "../../lib/useAppContent";
+import { resetAppState } from "../../lib/resetAppState";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PANEL_WIDTH = Math.min(340, Math.round(SCREEN_WIDTH * 0.8));
@@ -223,7 +224,10 @@ export default function HeaderMenu({ navigation }) {
                 hideChevron
                 onPress={() => {
                   closeMenu();
-                  setTimeout(() => signOut(), 200);
+                  setTimeout(async () => {
+                    await signOut();
+                    await resetAppState();
+                  }, 200);
                 }}
               />
             </View>

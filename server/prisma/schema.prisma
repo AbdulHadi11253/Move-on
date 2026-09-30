@@ -51,6 +51,10 @@ model User {
   gender             Gender?
   role               Role     @default(USER)
   onboardingComplete Boolean  @default(false)
+  // Whether this account has ever completed the one-time "Hold to Heal"
+  // long-press. Once true, the prompt never shows again for this account —
+  // not a per-day flag, and not reset by resetting journey progress.
+  hasStartedRecovery Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

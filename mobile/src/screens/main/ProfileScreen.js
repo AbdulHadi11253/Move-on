@@ -5,8 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
-import { clearStartedToday } from "../../lib/recoveryFlag";
 import { scheduleDailyReminder, cancelDailyReminder } from "../../lib/notifications";
+import { resetAppState } from "../../lib/resetAppState";
 import { usePullRefresh } from "../../lib/usePullRefresh";
 import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
@@ -60,7 +60,6 @@ export default function ProfileScreen({ navigation }) {
             setResetting(true);
             try {
               await api("/api/journeys/reset-progress", { method: "POST" });
-              await clearStartedToday();
               queryClient.invalidateQueries({ queryKey: ["journey-today"] });
               queryClient.invalidateQueries({ queryKey: ["progress"] });
             } catch (e) {
@@ -89,6 +88,7 @@ export default function ProfileScreen({ navigation }) {
               await api("/api/users/me", { method: "DELETE" });
               // Data is gone server-side; sign out to clear the local session.
               await signOut();
+              await resetAppState();
             } catch (e) {
               setDeleting(false);
               Alert.alert("Couldn't delete account", e.message);
@@ -330,7 +330,10 @@ export default function ProfileScreen({ navigation }) {
         </Pressable>
 
         <Pressable
-          onPress={() => signOut()}
+          onPress={async () => {
+            await signOut();
+            await resetAppState();
+          }}
           style={{
             backgroundColor: colors.surface,
             borderColor: colors.border,

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
 import { useQuotePostActions } from "../../lib/useQuotePostActions";
+import { useContentBlock } from "../../lib/useAppContent";
 import Screen from "../../components/ui/Screen";
 import AdminHeader from "../../components/admin/AdminHeader";
 import QuotePostCard from "../../components/quotes/QuotePostCard";
@@ -27,6 +28,10 @@ export default function MostPopularScreen({ navigation }) {
   });
 
   const { toggleSave, openComments, closeComments, commentsPost, refreshKeys } = useQuotePostActions([queryKey]);
+  const displayMode = useContentBlock("home_quote_display_mode")?.title || "BOTH";
+  const filteredPosts = (posts || []).filter((p) =>
+    displayMode === "TEXT" ? p.images.length === 0 : displayMode === "IMAGE" ? p.images.length > 0 : true
+  );
 
   return (
     <Screen>
@@ -38,7 +43,7 @@ export default function MostPopularScreen({ navigation }) {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id}
           numColumns={NUM_COLUMNS}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
@@ -49,7 +54,28 @@ export default function MostPopularScreen({ navigation }) {
               onPress={() => setViewingPost(item)}
               style={{ width: TILE_SIZE, height: TILE_SIZE, borderRadius: 16, overflow: "hidden" }}
             >
-              <Image source={{ uri: item.images[0]?.imageUrl }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+              {item.images.length === 0 ? (
+                <View
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    backgroundColor: colors.accentSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 10,
+                  }}
+                >
+                  <Ionicons name="sparkles" size={14} color={colors.accent} style={{ marginBottom: 6 }} />
+                  <Text
+                    style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "600", textAlign: "center" }}
+                    numberOfLines={4}
+                  >
+                    {item.text}
+                  </Text>
+                </View>
+              ) : (
+                <Image source={{ uri: item.images[0]?.imageUrl }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+              )}
               {item.images.length > 1 && (
                 <View style={{ position: "absolute", top: 8, right: 8 }}>
                   <Ionicons name="copy" size={15} color="#FFFFFF" />

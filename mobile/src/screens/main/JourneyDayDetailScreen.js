@@ -20,11 +20,25 @@ export default function JourneyDayDetailScreen({ route, navigation }) {
   });
 
   const completeTask = async (taskId) => {
-    await api(`/api/journeys/tasks/${taskId}/complete`, { method: "POST" });
-    queryClient.invalidateQueries({ queryKey: ["journey-day", dayNumber] });
-    queryClient.invalidateQueries({ queryKey: ["journey-today"] });
-    queryClient.invalidateQueries({ queryKey: ["journeys"] });
-    queryClient.invalidateQueries({ queryKey: ["progress"] });
+    // Flip the checkbox immediately instead of waiting on the mutation +
+    // four refetches round-trip — that chain was the visible "slow" lag.
+    // Reconciled with the server right after; rolled back if the request fails.
+    queryClient.setQueryData(["journey-day", dayNumber], (prev) =>
+      prev ? { ...prev, tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, done: true } : t)) } : prev
+    );
+    try {
+      await api(`/api/journeys/tasks/${taskId}/complete`, { method: "POST" });
+    } catch (e) {
+      queryClient.setQueryData(["journey-day", dayNumber], (prev) =>
+        prev ? { ...prev, tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, done: false } : t)) } : prev
+      );
+      return;
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ["journey-day", dayNumber] });
+      queryClient.invalidateQueries({ queryKey: ["journey-today"] });
+      queryClient.invalidateQueries({ queryKey: ["journeys"] });
+      queryClient.invalidateQueries({ queryKey: ["progress"] });
+    }
   };
 
   return (

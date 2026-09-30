@@ -42,7 +42,7 @@ export const adsAvailable = Constants.executionEnvironment !== ExecutionEnvironm
 export function useShowAds() {
   const api = useApi();
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
-  const { data: content } = useQuery({ queryKey: ["app-content"], queryFn: () => api("/api/content"), staleTime: 5 * 60 * 1000 });
+  const { data: content } = useQuery({ queryKey: ["app-content"], queryFn: () => api("/api/content"), staleTime: 30 * 1000 });
   const continuedFree = useAdsStore((s) => s.continuedFree);
 
   const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
