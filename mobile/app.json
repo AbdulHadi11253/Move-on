@@ -49,6 +49,12 @@
       "expo-web-browser",
       "expo-font",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Move On needs access to your photo library so you can upload images for quote posts and content."
+        }
+      ],
+      [
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-7457922785936662~9034132855",
