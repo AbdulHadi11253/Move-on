@@ -17,7 +17,7 @@ export function useApi() {
       try {
         return await apiFetch(path, { ...options, getToken });
       } catch (err) {
-        if (err.status === 401) {
+        if (err.status === 401 && err.hadToken) {
           await signOut().catch(() => {});
           await resetAppState();
           const sessionErr = new Error("Your session expired. Please sign in again.");

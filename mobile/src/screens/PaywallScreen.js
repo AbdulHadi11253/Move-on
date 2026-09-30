@@ -8,6 +8,7 @@ import { loadPackages, purchase, restore } from "../lib/purchases";
 import { useTheme } from "../theme/ThemeContext";
 import { useAdsStore } from "../state/adsStore";
 import { resetAppState } from "../lib/resetAppState";
+import { useContentBlock } from "../lib/useAppContent";
 import Screen from "../components/ui/Screen";
 
 const BENEFITS = [
@@ -29,6 +30,11 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
   const { signOut } = useAuth();
   const queryClient = useQueryClient();
   const setContinuedFree = useAdsStore((s) => s.setContinuedFree);
+  const freeTierContent = useContentBlock("free_tier_enabled");
+  // Doesn't retroactively affect anyone who already opted into the free
+  // tier before the admin switched this off — only hides the option going
+  // forward for users who haven't chosen it yet.
+  const freeTierEnabled = !freeTierContent || freeTierContent.isEnabled;
   const [packages, setPackages] = useState({ weekly: null, monthly: null });
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState("monthly");
@@ -206,19 +212,21 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={continueFree}
-          style={{
-            marginTop: 22,
-            borderRadius: 16,
-            paddingVertical: 16,
-            alignItems: "center",
-            backgroundColor: colors.accent,
-          }}
-        >
-          <Text style={{ color: colors.accentText, fontSize: 16, fontWeight: "700" }}>Continue with limited features</Text>
-          <Text style={{ color: colors.accentText, fontSize: 12, marginTop: 3, opacity: 0.85 }}>Free, with ads. Upgrade anytime.</Text>
-        </Pressable>
+        {freeTierEnabled && (
+          <Pressable
+            onPress={continueFree}
+            style={{
+              marginTop: 22,
+              borderRadius: 16,
+              paddingVertical: 16,
+              alignItems: "center",
+              backgroundColor: colors.accent,
+            }}
+          >
+            <Text style={{ color: colors.accentText, fontSize: 16, fontWeight: "700" }}>Continue with limited features</Text>
+            <Text style={{ color: colors.accentText, fontSize: 12, marginTop: 3, opacity: 0.85 }}>Free, with ads. Upgrade anytime.</Text>
+          </Pressable>
+        )}
 
         <Pressable
           onPress={async () => {

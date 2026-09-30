@@ -19,6 +19,11 @@ export async function apiFetch(path, { method = "GET", body, formData, getToken 
     const errBody = await res.json().catch(() => ({}));
     const err = new Error(errBody.error || `Request failed with ${res.status}`);
     err.status = res.status;
+    // A 401 with no token attached just means "not signed in yet" (e.g. a
+    // query that fires before sign-in completes) — expected, not a stale
+    // session. Only a 401 on a request that DID carry a token means the
+    // server actually rejected an existing session.
+    err.hadToken = !!token;
     throw err;
   }
 

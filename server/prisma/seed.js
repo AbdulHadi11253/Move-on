@@ -103,6 +103,13 @@ const APP_CONTENT = [
     subtitle: null,
     buttonLabel: null,
   },
+  {
+    key: "free_tier_enabled",
+    label: "Free Tier (\"Continue with limited features\") — Global Toggle for New Users",
+    title: null,
+    subtitle: null,
+    buttonLabel: null,
+  },
 ];
 
 const LESSONS = [

@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/clerk-expo";
 import { useApi } from "./useApi";
 import { useAdsStore } from "../state/adsStore";
 import { purchasesConfigured } from "./purchases";
@@ -41,8 +42,17 @@ export const adsAvailable = Constants.executionEnvironment !== ExecutionEnvironm
 // chose "Continue for free" AND the admin hasn't globally switched ads off.
 export function useShowAds() {
   const api = useApi();
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
-  const { data: content } = useQuery({ queryKey: ["app-content"], queryFn: () => api("/api/content"), staleTime: 30 * 1000 });
+  const { isSignedIn } = useAuth();
+  // Signed-out users (onboarding/sign-in) have no session to authenticate
+  // these with — calling them anyway just churns a guaranteed-401 request
+  // into a sign-out/reset cycle on every render.
+  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me"), enabled: !!isSignedIn });
+  const { data: content } = useQuery({
+    queryKey: ["app-content"],
+    queryFn: () => api("/api/content"),
+    staleTime: 30 * 1000,
+    enabled: !!isSignedIn,
+  });
   const continuedFree = useAdsStore((s) => s.continuedFree);
 
   const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
