@@ -269,6 +269,8 @@ model PushToken {
   token     String   @unique
   platform  String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model PromoCard {
@@ -329,6 +331,7 @@ model UserAffirmationSubscription {
   schedule   AffirmationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, scheduleId])
+  @@index([scheduleId])
 }
 
 model QuoteCategory {
@@ -374,6 +377,8 @@ model QuotePostImage {
   imageUrl  String
   imagePath String
   order     Int       @default(0)
+
+  @@index([postId])
 }
 
 model QuotePostSave {
@@ -385,6 +390,7 @@ model QuotePostSave {
   createdAt DateTime  @default(now())
 
   @@unique([userId, postId])
+  @@index([postId])
 }
 
 model QuotePostComment {
@@ -395,4 +401,7 @@ model QuotePostComment {
   post      QuotePost @relation(fields: [postId], references: [id], onDelete: Cascade)
   text      String
   createdAt DateTime  @default(now())
+
+  @@index([postId])
+  @@index([userId])
 }

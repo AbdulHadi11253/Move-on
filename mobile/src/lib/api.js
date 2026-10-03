@@ -1,8 +1,8 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // getToken is provided at call time from Clerk's useAuth() hook
-export async function apiFetch(path, { method = "GET", body, formData, getToken } = {}) {
-  const token = await getToken();
+export async function apiFetch(path, { method = "GET", body, formData, getToken, skipTokenCache = false } = {}) {
+  const token = await getToken(skipTokenCache ? { skipCache: true } : undefined);
 
   const headers = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

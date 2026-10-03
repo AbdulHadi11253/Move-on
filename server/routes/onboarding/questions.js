@@ -11,5 +11,9 @@ module.exports = async (req, res) => {
     where: { isEnabled: true },
     orderBy: [{ batch: "asc" }, { order: "asc" }],
   });
+  // Public and identical for everyone — every single new install hits this
+  // before sign-in, so letting Vercel's edge serve it from cache keeps that
+  // load off the database as installs scale.
+  res.setHeader("Cache-Control", "public, max-age=120, s-maxage=120, stale-while-revalidate=300");
   res.status(200).json(questions);
 };

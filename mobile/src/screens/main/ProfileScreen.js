@@ -1,16 +1,37 @@
-import { View, Text, Pressable, Switch, ScrollView, Alert } from "react-native";
+import { View, Text, Pressable, Switch, ScrollView, Alert, Linking, Platform } from "react-native";
 import { useState, useEffect } from "react";
 import { useUser, useAuth } from "@clerk/clerk-expo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as StoreReview from "expo-store-review";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
+import { useContentBlock } from "../../lib/useAppContent";
 import { scheduleDailyReminder, cancelDailyReminder } from "../../lib/notifications";
 import { resetAppState } from "../../lib/resetAppState";
 import { usePullRefresh } from "../../lib/usePullRefresh";
 import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
 import ThemedRefreshControl from "../../components/ui/ThemedRefreshControl";
+
+const PRIVACY_URL = "https://facelessquotes.online/privacy-policy/";
+const SUPPORT_URL = "https://facelessquotes.online/move-on-support/";
+
+// requestReview() shows the native in-app rating prompt (App Store "ask for
+// review" sheet / Play's in-app review flow). hasAction() confirms it's
+// actually available on this device/OS version; on Android specifically,
+// fall back to opening the Play Store listing directly if not (the native
+// sheet has a quota and isn't always granted by Play Services).
+async function rateApp() {
+  const available = await StoreReview.hasAction();
+  if (available) {
+    await StoreReview.requestReview();
+    return;
+  }
+  if (Platform.OS === "android") {
+    Linking.openURL("market://details?id=com.moveonquotes.app").catch(() => {});
+  }
+}
 
 export default function ProfileScreen({ navigation }) {
   const { user } = useUser();
@@ -25,6 +46,8 @@ export default function ProfileScreen({ navigation }) {
 
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api("/api/users/me") });
   const { refreshing, onRefresh } = usePullRefresh([["me"]]);
+  const rateAppContent = useContentBlock("rate_app_enabled");
+  const rateAppEnabled = !rateAppContent || rateAppContent.isEnabled;
 
   useEffect(() => {
     api("/api/users/notification-settings")
@@ -294,6 +317,40 @@ export default function ProfileScreen({ navigation }) {
             );
           })}
         </View>
+
+        {rateAppEnabled && (
+          <Pressable onPress={rateApp}>
+            <Card style={{ marginBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="star-outline" size={18} color={colors.accent} />
+                <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10, fontWeight: "500" }}>
+                  Rate This App
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </Card>
+          </Pressable>
+        )}
+
+        <Pressable onPress={() => Linking.openURL(SUPPORT_URL).catch(() => {})}>
+          <Card style={{ marginBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="help-buoy-outline" size={18} color={colors.accent} />
+              <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10, fontWeight: "500" }}>Support</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Card>
+        </Pressable>
+
+        <Pressable onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})}>
+          <Card style={{ marginBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="document-text-outline" size={18} color={colors.accent} />
+              <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10, fontWeight: "500" }}>Privacy Policy</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Card>
+        </Pressable>
 
         {me?.role === "ADMIN" && (
           <Pressable onPress={() => navigation.navigate("Admin")}>

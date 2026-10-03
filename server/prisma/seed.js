@@ -110,6 +110,13 @@ const APP_CONTENT = [
     subtitle: null,
     buttonLabel: null,
   },
+  {
+    key: "rate_app_enabled",
+    label: "Rate This App — Global Toggle",
+    title: null,
+    subtitle: null,
+    buttonLabel: null,
+  },
 ];
 
 const LESSONS = [

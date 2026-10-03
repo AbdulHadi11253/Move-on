@@ -20,9 +20,18 @@ function sdk() {
 export async function initPurchases(userId) {
   if (!purchasesConfigured || configuredFor === userId) return;
   const P = sdk();
-  if (configuredFor === null) P.configure({ apiKey: KEY, appUserID: userId });
-  else await P.logIn(userId);
-  configuredFor = userId;
+  try {
+    if (configuredFor === null) P.configure({ apiKey: KEY, appUserID: userId });
+    else await P.logIn(userId);
+    configuredFor = userId;
+  } catch (e) {
+    // Swallowed by the caller (best-effort on app launch) — logged here so a
+    // real RevenueCat configuration problem (bad key, store products not yet
+    // approved/submitted, etc.) is visible instead of silently surfacing
+    // later as "this plan isn't available" with no clue why.
+    console.warn("RevenueCat initPurchases failed:", e?.message || e);
+    throw e;
+  }
 }
 
 export async function resetPurchases() {
@@ -37,6 +46,14 @@ export async function resetPurchases() {
 export async function loadPackages() {
   const offerings = await sdk().getOfferings();
   const pkgs = offerings.current?.availablePackages || [];
+  if (pkgs.length === 0) {
+    // Configured correctly in RevenueCat but nothing resolves client-side —
+    // almost always means the store-side products (App Store Connect /
+    // Google Play Console) aren't yet in a queryable state (not submitted
+    // with a build at least once, missing agreements, or not Active), not a
+    // RevenueCat or app configuration bug.
+    console.warn("RevenueCat: offerings.current has no packages — check the products' status in App Store Connect / Play Console.");
+  }
   return {
     weekly: pkgs.find((p) => p.packageType === "WEEKLY") || null,
     monthly: pkgs.find((p) => p.packageType === "MONTHLY") || null,

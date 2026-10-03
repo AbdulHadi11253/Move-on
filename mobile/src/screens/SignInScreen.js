@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert, Platform } from "react-native";
 import { useSignIn, useSignUp, useOAuth } from "@clerk/clerk-expo";
 import * as WebBrowser from "expo-web-browser";
@@ -8,7 +8,20 @@ import Screen from "../components/ui/Screen";
 
 WebBrowser.maybeCompleteAuthSession();
 
+// Expo/Clerk's documented fix for the first OAuth attempt sometimes hanging
+// or failing on Android: pre-warm the Custom Tabs browser process on mount
+// so it isn't a cold start the moment the user taps Google/Apple.
+function useWarmUpBrowser() {
+  useEffect(() => {
+    WebBrowser.warmUpAsync();
+    return () => {
+      WebBrowser.coolDownAsync();
+    };
+  }, []);
+}
+
 export default function SignInScreen() {
+  useWarmUpBrowser();
   const { colors } = useTheme();
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();

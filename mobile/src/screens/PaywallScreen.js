@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, ScrollView, Alert } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, ScrollView, Alert, Linking } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -116,7 +116,7 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
           >
             <Ionicons name="sparkles" size={28} color={colors.accent} />
           </View>
-          <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700", textAlign: "center" }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700", textAlign: "center" }}>
             Start your 3-day free trial
           </Text>
           <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginTop: 8 }}>
@@ -207,7 +207,7 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Terms</Text>
           </Pressable>
           <Text style={{ color: colors.textMuted, marginHorizontal: 10 }}>|</Text>
-          <Pressable onPress={() => navigation.navigate("PrivacyPolicy")} hitSlop={8}>
+          <Pressable onPress={() => Linking.openURL("https://facelessquotes.online/privacy-policy/").catch(() => {})} hitSlop={8}>
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Privacy</Text>
           </Pressable>
         </View>
@@ -223,8 +223,8 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
               backgroundColor: colors.accent,
             }}
           >
-            <Text style={{ color: colors.accentText, fontSize: 16, fontWeight: "700" }}>Continue with limited features</Text>
-            <Text style={{ color: colors.accentText, fontSize: 12, marginTop: 3, opacity: 0.85 }}>Free, with ads. Upgrade anytime.</Text>
+            <Text style={{ color: colors.accentText, fontSize: 19, fontWeight: "700" }}>Continue for Free</Text>
+            <Text style={{ color: colors.accentText, fontSize: 12, marginTop: 3, opacity: 0.85 }}>Limited features, with ads. Upgrade anytime.</Text>
           </Pressable>
         )}
 
