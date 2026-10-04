@@ -101,34 +101,34 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <View style={{ alignItems: "center", marginTop: 16, marginBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <View style={{ alignItems: "center", marginTop: 8, marginBottom: 14 }}>
           <View
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 20,
+              width: 48,
+              height: 48,
+              borderRadius: 16,
               backgroundColor: colors.accentSoft,
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 16,
+              marginBottom: 10,
             }}
           >
-            <Ionicons name="sparkles" size={28} color={colors.accent} />
+            <Ionicons name="sparkles" size={22} color={colors.accent} />
           </View>
-          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700", textAlign: "center" }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 19, fontWeight: "700", textAlign: "center" }}>
             Start your 3-day free trial
           </Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginTop: 8 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center", marginTop: 4 }}>
             Full access to everything in Move On. Cancel anytime.
           </Text>
         </View>
 
-        <View style={{ marginBottom: 24 }}>
+        <View style={{ marginBottom: 14 }}>
           {BENEFITS.map((b) => (
-            <View key={b} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-              <Text style={{ color: colors.textPrimary, fontSize: 15, marginLeft: 10 }}>{b}</Text>
+            <View key={b} style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+              <Text style={{ color: colors.textPrimary, fontSize: 13, marginLeft: 8 }}>{b}</Text>
             </View>
           ))}
         </View>
@@ -149,14 +149,14 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
                   borderWidth: 2,
                   borderColor: active ? colors.accent : colors.border,
                   backgroundColor: colors.surface,
-                  borderRadius: 18,
-                  padding: 18,
-                  marginBottom: 12,
+                  borderRadius: 16,
+                  padding: 14,
+                  marginBottom: 8,
                 }}
               >
                 <View>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>{PLANS[key].title}</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700" }}>{PLANS[key].title}</Text>
                     {PLANS[key].badge && (
                       <View style={{ backgroundColor: colors.accent, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8 }}>
                         <Text style={{ color: colors.accentText, fontSize: 10, fontWeight: "700" }}>{PLANS[key].badge}</Text>
@@ -183,22 +183,22 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
           style={{
             backgroundColor: busy || loading ? colors.surfaceAlt : colors.accent,
             borderRadius: 16,
-            paddingVertical: 16,
+            paddingVertical: 14,
             alignItems: "center",
-            marginTop: 8,
+            marginTop: 4,
           }}
         >
-          <Text style={{ color: busy || loading ? colors.textMuted : colors.accentText, fontSize: 16, fontWeight: "700" }}>
+          <Text style={{ color: busy || loading ? colors.textMuted : colors.accentText, fontSize: 15, fontWeight: "700" }}>
             {busy ? "Please wait..." : "Start free trial"}
           </Text>
         </Pressable>
 
-        <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: "center", marginTop: 14, lineHeight: 18 }}>
+        <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: "center", marginTop: 8, lineHeight: 15 }}>
           Your card is charged automatically after the 3-day trial ends unless you cancel at least 24 hours before it does.
           Manage or cancel anytime in your App Store / Google Play subscription settings.
         </Text>
 
-        <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 18 }}>
+        <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 10 }}>
           <Pressable onPress={doRestore} hitSlop={8}>
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Restore purchases</Text>
           </Pressable>
@@ -216,15 +216,15 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
           <Pressable
             onPress={continueFree}
             style={{
-              marginTop: 22,
+              marginTop: 12,
               borderRadius: 16,
-              paddingVertical: 16,
+              paddingVertical: 13,
               alignItems: "center",
               backgroundColor: colors.accent,
             }}
           >
-            <Text style={{ color: colors.accentText, fontSize: 19, fontWeight: "700" }}>Continue for Free</Text>
-            <Text style={{ color: colors.accentText, fontSize: 12, marginTop: 3, opacity: 0.85 }}>Limited features, with ads. Upgrade anytime.</Text>
+            <Text style={{ color: colors.accentText, fontSize: 17, fontWeight: "700" }}>Continue for Free</Text>
+            <Text style={{ color: colors.accentText, fontSize: 11, marginTop: 2, opacity: 0.85 }}>Limited features, with ads. Upgrade anytime.</Text>
           </Pressable>
         )}
 
@@ -234,7 +234,7 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
             await resetAppState();
           }}
           hitSlop={8}
-          style={{ marginTop: 18, alignItems: "center" }}
+          style={{ marginTop: 10, alignItems: "center" }}
         >
           <Text style={{ color: colors.textMuted, fontSize: 13 }}>Sign out</Text>
         </Pressable>

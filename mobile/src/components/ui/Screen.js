@@ -15,7 +15,12 @@ export default function Screen({ children, edges = ["top", "bottom"], style }) {
   return (
     <KeyboardAvoidingView
       style={[{ flex: 1, backgroundColor: colors.background, paddingTop, paddingBottom }, style]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      // android:windowSoftInputMode="adjustResize" is set, but it doesn't
+      // reliably propagate through react-native-screens' native-stack on
+      // every Android version/device — driving this from JS too (same as
+      // iOS) is the robust fix for inputs/buttons getting covered by the
+      // keyboard instead of the layout reflowing around it.
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar style={theme.statusBar} />
       {children}

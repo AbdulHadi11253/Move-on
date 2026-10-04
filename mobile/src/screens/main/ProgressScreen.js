@@ -73,7 +73,10 @@ export default function ProgressScreen({ navigation }) {
           )}
           <ChooseJourneyButton
             label={noJourneyContent?.buttonLabel || "Choose Your Journey"}
-            onPress={() => navigation.navigate("Journey")}
+            onPress={() => {
+              markJourneyDeferred();
+              navigation.navigate("Journey");
+            }}
             onSkip={async () => {
               await markJourneyDeferred();
               setDeferred(true);

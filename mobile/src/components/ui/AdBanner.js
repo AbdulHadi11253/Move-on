@@ -21,7 +21,7 @@ export default function AdBanner() {
   const { BannerAd, BannerAdSize } = require("react-native-google-mobile-ads");
 
   return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surface, paddingTop: loaded ? 4 : 0 }}>
+    <View style={{ alignItems: "center", paddingTop: loaded ? 4 : 0 }}>
       {loaded && (
         <Pressable
           onPress={() => setDismissed(true)}

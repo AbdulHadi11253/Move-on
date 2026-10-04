@@ -83,19 +83,32 @@ export default function RootNavigator() {
     }
     setLoadingMe(true);
     api("/api/users/me")
-      .then(async (user) => {
-        // Refresh subscription state from the store on launch so expired or
-        // cancelled trials are caught. Best-effort.
-        if (purchasesConfigured && user.role !== "ADMIN" && user.onboardingComplete) {
-          try {
-            await initPurchases(user.id);
-            user = { ...user, subscription: await api("/api/subscription/sync", { method: "POST" }) };
-          } catch {}
-        }
-        setMe(user);
-      })
+      .then((user) => setMe(user))
       .finally(() => setLoadingMe(false));
   }, [isSignedIn]);
+
+  // Configuring RevenueCat and syncing the subscription is its own effect,
+  // keyed on onboardingComplete rather than folded into the /me fetch above.
+  // A brand-new signup completes onboarding *after* that first /me fetch
+  // already resolved (with onboardingComplete still false at that moment) —
+  // folding this into the fetch meant it only ever ran for returning users
+  // who were already onboarded, never for a first-time signup in the same
+  // session. That left Purchases never configured, so the paywall's "Start
+  // free trial" / "Restore purchases" failed with "no singleton instance" /
+  // "this plan isn't available" for every first-time user.
+  useEffect(() => {
+    if (!purchasesConfigured || !me?.onboardingComplete || me.role === "ADMIN") return;
+    let cancelled = false;
+    initPurchases(me.id)
+      .then(() => api("/api/subscription/sync", { method: "POST" }))
+      .then((subscription) => {
+        if (!cancelled) setMe((prev) => (prev ? { ...prev, subscription } : prev));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [me?.id, me?.onboardingComplete]);
 
   // Push registration + daily reminder once the user is fully onboarded.
   useEffect(() => {

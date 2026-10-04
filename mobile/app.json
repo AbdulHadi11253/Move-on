@@ -62,7 +62,16 @@
           "userTrackingUsageDescription": "This identifier lets Move On show you fewer, better-targeted ads. You can decline and still use the app."
         }
       ],
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

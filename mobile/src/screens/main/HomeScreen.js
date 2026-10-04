@@ -153,7 +153,15 @@ export default function HomeScreen({ navigation }) {
           )}
           <ChooseJourneyButton
             label={noJourneyContent?.buttonLabel || "Choose Your Journey"}
-            onPress={() => navigation.navigate("Journey")}
+            onPress={() => {
+              // Visiting the journey picker at all — not just explicitly
+              // tapping "Start later" — counts as the user's one first
+              // decision: if they come back to Home without having actually
+              // started one, show normal Home content instead of nagging
+              // them with this button again.
+              markJourneyDeferred();
+              navigation.navigate("Journey");
+            }}
             onSkip={onSkipJourney}
           />
         </ScrollView>
