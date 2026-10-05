@@ -97,6 +97,13 @@ const APP_CONTENT = [
     buttonLabel: null,
   },
   {
+    key: "hold_to_heal_enabled",
+    label: "\"Hold to Heal\" Round Button — Global Toggle (Journey/Progress tabs stay visible either way)",
+    title: null,
+    subtitle: null,
+    buttonLabel: null,
+  },
+  {
     key: "home_quote_display_mode",
     label: "Home & Quotes Tab — Quote Display (Text/Image/Both)",
     title: "BOTH",

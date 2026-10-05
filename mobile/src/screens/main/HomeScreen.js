@@ -15,7 +15,6 @@ import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
 import ProgressBar from "../../components/ui/ProgressBar";
 import StartRecoveryButton from "../../components/ui/StartRecoveryButton";
-import ChooseJourneyButton from "../../components/ui/ChooseJourneyButton";
 import ThemedRefreshControl from "../../components/ui/ThemedRefreshControl";
 import MeditationIcon from "../../components/ui/MeditationIcon";
 import AdBanner from "../../components/ui/AdBanner";
@@ -55,9 +54,10 @@ export default function HomeScreen({ navigation }) {
     queryFn: () => api("/api/journeys/today"),
   });
 
-  const noJourneyContent = useContentBlock("home_no_journey");
   const trackerContent = useContentBlock("tracker_enabled");
   const trackerEnabled = !trackerContent || trackerContent.isEnabled;
+  const holdToHealToggle = useContentBlock("hold_to_heal_enabled");
+  const holdToHealEnabled = !holdToHealToggle || holdToHealToggle.isEnabled;
   const startRecoveryContent = useContentBlock("start_recovery_button");
   const todayQuoteContent = useContentBlock("home_today_quote");
   const carouselLimitContent = useContentBlock("home_carousel_limit");
@@ -111,6 +111,7 @@ export default function HomeScreen({ navigation }) {
   const onRecoveryStarted = async () => {
     await api("/api/users/recovery-started", { method: "POST" });
     queryClient.setQueryData(["me"], (prev) => (prev ? { ...prev, hasStartedRecovery: true } : prev));
+    navigation.navigate("Journey");
   };
 
   if (isLoading || !checkedStorage) {
@@ -128,9 +129,14 @@ export default function HomeScreen({ navigation }) {
   // journey — it's meant to stop new users from being funneled into the
   // journey/progress feature, not to take it away from someone already using it.
   const effectiveDeferred = deferred || (!trackerEnabled && !hasJourney);
+  // One single round button now (not two): "Hold to Heal" is the sole entry
+  // point into choosing a journey. It only ever shows for a user with no
+  // active journey who hasn't completed it before and hasn't skipped it —
+  // never again after any of those, regardless of what they do on the
+  // Journey tab once it sends them there.
+  const showHoldToHeal = !hasJourney && !me?.hasStartedRecovery && !effectiveDeferred && holdToHealEnabled;
 
-  if (!hasJourney && !effectiveDeferred) {
-    const showNoJourneyText = !noJourneyContent || noJourneyContent.isEnabled;
+  if (showHoldToHeal) {
     return (
       <Screen>
         <ScrollView
@@ -138,47 +144,8 @@ export default function HomeScreen({ navigation }) {
           contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
           refreshControl={<ThemedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {showNoJourneyText && !!noJourneyContent?.title && (
-            <Text style={{ color: colors.textSecondary, fontSize: 15, marginBottom: 4 }}>
-              {noJourneyContent.title}
-            </Text>
-          )}
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", marginBottom: 16, textAlign: "center" }}>
-            {displayName}
-          </Text>
-          {showNoJourneyText && !!noJourneyContent?.subtitle && (
-            <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginBottom: 20, lineHeight: 22 }}>
-              {noJourneyContent.subtitle}
-            </Text>
-          )}
-          <ChooseJourneyButton
-            label={noJourneyContent?.buttonLabel || "Choose Your Journey"}
-            onPress={() => {
-              // Visiting the journey picker at all — not just explicitly
-              // tapping "Start later" — counts as the user's one first
-              // decision: if they come back to Home without having actually
-              // started one, show normal Home content instead of nagging
-              // them with this button again.
-              markJourneyDeferred();
-              navigation.navigate("Journey");
-            }}
-            onSkip={onSkipJourney}
-          />
-        </ScrollView>
-      </Screen>
-    );
-  }
-
-  if (hasJourney && !me?.hasStartedRecovery) {
-    return (
-      <Screen>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
-          refreshControl={<ThemedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        >
-          <Text style={{ color: colors.textSecondary, fontSize: 15, marginBottom: 4 }}>Welcome back</Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", marginBottom: 24 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 15, marginBottom: 4 }}>Welcome</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", marginBottom: 24, textAlign: "center" }}>
             {displayName}
           </Text>
           <MeditationIcon size={100} color={colors.accent} />
@@ -190,8 +157,11 @@ export default function HomeScreen({ navigation }) {
             doneMessage={startRecoveryContent?.buttonLabel || "Done"}
           />
           <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 32, textAlign: "center" }}>
-            Press and hold to begin today's recovery session
+            Press and hold to choose your journey
           </Text>
+          <Pressable onPress={onSkipJourney} hitSlop={10} style={{ marginTop: 16 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: "600" }}>Start later</Text>
+          </Pressable>
         </ScrollView>
       </Screen>
     );

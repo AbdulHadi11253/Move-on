@@ -1,48 +1,28 @@
-import { useCallback, useState } from "react";
 import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../lib/useApi";
 import { useTheme } from "../../theme/ThemeContext";
-import { useContentBlock } from "../../lib/useAppContent";
 import { usePullRefresh } from "../../lib/usePullRefresh";
 import { getMotivation, getAchievements } from "../../lib/progressMotivation";
-import { hasJourneyDeferred, markJourneyDeferred } from "../../lib/journeyFlag";
 import Screen from "../../components/ui/Screen";
 import Card from "../../components/ui/Card";
 import StatTile from "../../components/ui/StatTile";
 import Chip from "../../components/ui/Chip";
-import ChooseJourneyButton from "../../components/ui/ChooseJourneyButton";
 import ThemedRefreshControl from "../../components/ui/ThemedRefreshControl";
 
 export default function ProgressScreen({ navigation }) {
   const api = useApi();
   const { colors } = useTheme();
-  const [deferred, setDeferred] = useState(false);
-  const [checkedDeferred, setCheckedDeferred] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      hasJourneyDeferred().then((skipped) => {
-        setDeferred(skipped);
-        setCheckedDeferred(true);
-      });
-    }, [])
-  );
 
   const { data, isLoading } = useQuery({
     queryKey: ["progress"],
     queryFn: () => api("/api/journeys/progress"),
   });
 
-  const noJourneyContent = useContentBlock("progress_no_journey");
-  const trackerContent = useContentBlock("tracker_enabled");
-  const trackerEnabled = !trackerContent || trackerContent.isEnabled;
   const { refreshing, onRefresh } = usePullRefresh([["progress"], ["app-content"]]);
-  const effectiveDeferred = deferred || (!trackerEnabled && !data?.hasActiveJourney);
 
-  if (isLoading || !checkedDeferred) {
+  if (isLoading) {
     return (
       <Screen>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -52,42 +32,10 @@ export default function ProgressScreen({ navigation }) {
     );
   }
 
-  if (!data?.hasActiveJourney && !effectiveDeferred) {
-    const showNoJourneyText = !noJourneyContent || noJourneyContent.isEnabled;
-    return (
-      <Screen>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
-          refreshControl={<ThemedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        >
-          {showNoJourneyText && !!noJourneyContent?.title && (
-            <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700", marginBottom: 8 }}>
-              {noJourneyContent.title}
-            </Text>
-          )}
-          {showNoJourneyText && (
-            <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginBottom: 20 }}>
-              {noJourneyContent?.subtitle || "You don't have an active journey yet."}
-            </Text>
-          )}
-          <ChooseJourneyButton
-            label={noJourneyContent?.buttonLabel || "Choose Your Journey"}
-            onPress={() => {
-              markJourneyDeferred();
-              navigation.navigate("Journey");
-            }}
-            onSkip={async () => {
-              await markJourneyDeferred();
-              setDeferred(true);
-            }}
-          />
-        </ScrollView>
-      </Screen>
-    );
-  }
-
-  if (!data?.hasActiveJourney && effectiveDeferred) {
+  // The "choose a journey" round button lives on Home only (there's one of
+  // it, not one per tab) — Progress just offers a plain way in regardless of
+  // whether that button has already been shown/skipped there.
+  if (!data?.hasActiveJourney) {
     return (
       <Screen>
         <ScrollView
