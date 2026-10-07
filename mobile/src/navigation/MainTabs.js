@@ -1,5 +1,6 @@
 import { View, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import HomeNavigator from "./HomeNavigator";
@@ -23,6 +24,12 @@ const ICONS = {
 export default function MainTabs() {
   const { colors } = useTheme();
   const api = useApi();
+  const insets = useSafeAreaInsets();
+  // A fixed height here ignores the device's own bottom inset entirely — that
+  // works fine on a phone (a few px of home-indicator at most) but breaks on
+  // a tablet, where the OS's own on-screen nav bar is much taller, leaving
+  // our tab bar overlapping it instead of sitting above it.
+  const tabBarHeight = 56 + insets.bottom;
 
   // The landing tab comes from App Content. We must wait for it to load before
   // mounting the navigator, because `initialRouteName` only applies on first
@@ -63,8 +70,9 @@ export default function MainTabs() {
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopColor: colors.tabBarBorder,
-          height: 84,
+          height: tabBarHeight,
           paddingTop: 8,
+          paddingBottom: insets.bottom,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
         tabBarIcon: ({ color, size, focused }) => (

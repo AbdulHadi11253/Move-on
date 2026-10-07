@@ -119,6 +119,7 @@ export default function PopularPostsSection({ navigation }) {
                 onToggleSave={toggleSave}
                 onOpenComments={openComments}
                 imageHeight={420}
+                expandable={false}
               />
             </View>
           )}

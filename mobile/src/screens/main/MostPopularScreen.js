@@ -101,6 +101,7 @@ export default function MostPopularScreen({ navigation }) {
                 onToggleSave={toggleSave}
                 onOpenComments={openComments}
                 imageHeight={420}
+                expandable={false}
               />
             </View>
           )}

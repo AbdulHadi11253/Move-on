@@ -110,14 +110,22 @@ export default function RootNavigator() {
     };
   }, [me?.id, me?.onboardingComplete]);
 
-  // Push registration + daily reminder once the user is fully onboarded.
+  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
+  const needsPaywall = purchasesConfigured && !entitled && !continuedFree;
+
+  // Push registration + daily reminder once the user is fully onboarded AND
+  // past the paywall decision — not while the paywall itself is still up.
+  // Firing this (a system permission prompt) at the same time as the paywall
+  // meant the user could see an OS notification dialog stacked on top of —
+  // or racing — the free/paid choice; it now only asks once they're
+  // actually on Home.
   useEffect(() => {
-    if (!me?.onboardingComplete) return;
+    if (!me?.onboardingComplete || needsPaywall) return;
     registerForPush(api);
     api("/api/users/notification-settings")
       .then((s) => (s.dailyReminder ? scheduleDailyReminder(s.reminderTime) : cancelDailyReminder()))
       .catch(() => {});
-  }, [me?.id, me?.onboardingComplete]);
+  }, [me?.id, me?.onboardingComplete, needsPaywall]);
 
   const navTheme = {
     ...(theme.statusBar === "light" ? DarkTheme : DefaultTheme),
@@ -131,8 +139,6 @@ export default function RootNavigator() {
     },
   };
 
-  const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
-  const needsPaywall = purchasesConfigured && !entitled && !continuedFree;
   // Same eligibility check AdBanner uses (see useShowAds's doc comment) —
   // never computed a second, different way here.
   const showingAds = useShowAds();
@@ -208,7 +214,9 @@ export default function RootNavigator() {
     screens = (
       <>
         <Stack.Screen name="Paywall">
-          {(props) => <PaywallScreen {...props} onSubscribed={(subscription) => setMe({ ...me, subscription })} />}
+          {(props) => (
+            <PaywallScreen {...props} blocking onSubscribed={(subscription) => setMe({ ...me, subscription })} />
+          )}
         </Stack.Screen>
         {legal}
       </>

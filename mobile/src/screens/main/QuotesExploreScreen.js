@@ -43,7 +43,7 @@ export default function QuotesExploreScreen({ navigation }) {
         <FlatList
           data={filteredPosts}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, alignItems: "center" }}
           ListHeaderComponent={
             <CategoriesRow
               categories={categories}

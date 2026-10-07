@@ -3,8 +3,15 @@ import { View, Text, Image, Pressable, FlatList, Dimensions, Share } from "react
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "../../theme/ThemeContext";
+import QuoteReaderModal from "./QuoteReaderModal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+// Uncapped, a card this wide on a tablet (SCREEN_WIDTH there is 2-3x a
+// phone's) combined with a fixed imageHeight crops a far wider slice of the
+// same image than on a phone — this is what was reported as images looking
+// "stretched and cut" on iPad. Capping keeps the card at a phone-like,
+// comfortable reading width and lets it center with space on either side.
+const MAX_CARD_WIDTH = 500;
 
 function ReadMoreSlide({ width, height, colors, onPress }) {
   return (
@@ -51,11 +58,13 @@ export default function QuotePostCard({
   imageHeight = 420,
   cardWidth,
   style,
+  expandable = true,
 }) {
   const { colors } = useTheme();
   const [index, setIndex] = useState(0);
   const [copied, setCopied] = useState(false);
-  const width = cardWidth || SCREEN_WIDTH - 40;
+  const [readerOpen, setReaderOpen] = useState(false);
+  const width = cardWidth || Math.min(SCREEN_WIDTH - 40, MAX_CARD_WIDTH);
 
   const images = post.images || [];
   const isText = images.length === 0 && !!post.text;
@@ -82,6 +91,7 @@ export default function QuotePostCard({
     <View
       style={[
         {
+          width,
           backgroundColor: colors.surface,
           borderColor: colors.border,
           borderWidth: 1,
@@ -92,7 +102,9 @@ export default function QuotePostCard({
       ]}
     >
       {isText ? (
-        <View
+        <Pressable
+          disabled={!expandable}
+          onPress={() => setReaderOpen(true)}
           style={{
             width,
             minHeight: 200,
@@ -107,9 +119,9 @@ export default function QuotePostCard({
           <Text style={{ color: colors.textPrimary, fontSize: 19, lineHeight: 28, fontWeight: "600", textAlign: "center" }}>
             {post.text}
           </Text>
-        </View>
+        </Pressable>
       ) : (
-        <View style={{ width, height: imageHeight }}>
+        <Pressable disabled={!expandable} onPress={() => setReaderOpen(true)} style={{ width, height: imageHeight }}>
           <FlatList
             data={slides}
             keyExtractor={(item, i) => (item.__readMore ? "read-more" : item.id || String(i))}
@@ -170,8 +182,10 @@ export default function QuotePostCard({
             ))}
           </View>
         )}
-        </View>
+        </Pressable>
       )}
+
+      <QuoteReaderModal post={post} visible={readerOpen} onClose={() => setReaderOpen(false)} />
 
       <View
         style={{

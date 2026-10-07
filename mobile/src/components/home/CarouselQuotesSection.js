@@ -7,7 +7,7 @@ export default function CarouselQuotesSection({ posts, limit, onToggleSave, onOp
   if (visible.length === 0) return null;
 
   return (
-    <View style={{ marginBottom: 8 }}>
+    <View style={{ marginBottom: 8, alignItems: "center" }}>
       {visible.map((post) => (
         <QuotePostCard
           key={post.id}

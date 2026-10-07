@@ -99,7 +99,7 @@ export default function CategoryQuotesScreen({ route, navigation }) {
         <FlatList
           data={shownPosts}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, alignItems: "center" }}
           renderItem={({ item }) => (
             <QuotePostCard post={item} onToggleSave={toggleSave} onOpenComments={openComments} style={{ marginBottom: 16 }} />
           )}

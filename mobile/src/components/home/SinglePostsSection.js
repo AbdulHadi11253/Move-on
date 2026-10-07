@@ -7,7 +7,7 @@ export default function SinglePostsSection({ posts, limit, onToggleSave, onOpenC
   if (visible.length === 0) return null;
 
   return (
-    <View style={{ marginBottom: 12 }}>
+    <View style={{ marginBottom: 12, alignItems: "center" }}>
       {visible.map((post) => (
         <QuotePostCard
           key={post.id}

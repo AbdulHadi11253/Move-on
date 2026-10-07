@@ -24,7 +24,7 @@ const PLANS = {
   monthly: { title: "Monthly", fallbackPrice: "$9.99", period: "month", badge: "BEST VALUE" },
 };
 
-export default function PaywallScreen({ navigation, onSubscribed }) {
+export default function PaywallScreen({ navigation, onSubscribed, blocking = false }) {
   const { colors } = useTheme();
   const api = useApi();
   const { signOut } = useAuth();
@@ -50,15 +50,19 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
   const finish = async () => {
     const sub = await api("/api/subscription/sync", { method: "POST" });
     if (sub.status === "TRIAL" || sub.status === "ACTIVE") {
+      onSubscribed(sub);
       // useShowAds() reads its own ["me"] query cache — invalidate it now so
       // ads switch off immediately instead of waiting for its next refetch.
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      onSubscribed(sub);
-      // Reached via "Upgrade Now" from inside the app (Paywall pushed on top
-      // of MainTabs) rather than as the blocking post-onboarding screen —
-      // there, RootNavigator's phase never changes (still "app"), so nothing
-      // else navigates us away. No-ops when there's nothing to go back to.
-      if (navigation.canGoBack()) navigation.goBack();
+      // In the blocking (first-time) phase, RootNavigator's Stack.Navigator
+      // is keyed by phase and about to fully remount once `me.subscription`
+      // above flips `needsPaywall` false — calling goBack() here too, on a
+      // navigator instance that's simultaneously being torn down by that key
+      // change, raced with it and produced exactly the "flashes back to the
+      // paywall, then stops responding entirely" bug reported. Only the
+      // "Upgrade Now" push case (reached from inside the app, where the
+      // phase never changes) needs an explicit goBack() to return.
+      if (!blocking && navigation.canGoBack()) navigation.goBack();
     } else {
       Alert.alert("Not active yet", "We couldn't confirm your subscription yet. Please try Restore in a moment.");
     }
@@ -96,7 +100,9 @@ export default function PaywallScreen({ navigation, onSubscribed }) {
 
   const continueFree = () => {
     setContinuedFree();
-    if (navigation.canGoBack()) navigation.goBack();
+    // See the matching comment in finish() — don't fight the phase-remount
+    // with an explicit goBack() in the blocking case.
+    if (!blocking && navigation.canGoBack()) navigation.goBack();
   };
 
   return (
