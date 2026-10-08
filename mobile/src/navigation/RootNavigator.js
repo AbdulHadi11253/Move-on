@@ -74,15 +74,23 @@ export default function RootNavigator() {
   const { continuedFree, hydrated: adsHydrated } = useAdsStore();
   const [me, setMe] = useState(null);
   const [loadingMe, setLoadingMe] = useState(true);
+  // Belt-and-suspenders alongside the Zustand flag below: a plain useState
+  // setter on THIS component is the one re-render signal that cannot be
+  // affected by store subscription timing, selector identity, or any other
+  // indirection — calling it directly guarantees RootNavigator re-evaluates
+  // `needsPaywall` on the very next render after the tap, independent of
+  // whether the Zustand update notifies its subscribers synchronously.
+  const [sessionContinuedFree, setSessionContinuedFree] = useState(false);
 
   // Single owner of the "continue for free" transition out of the blocking
-  // paywall phase. PaywallScreen only awaits this — it never flips the
-  // Zustand flag or navigates itself in that case, so there's exactly one
-  // place deciding when the phase changes. Setting `continuedFree` here
-  // flips `needsPaywall` below on this same render pass, which changes
-  // `phaseKey` from "paywall" to "app" and remounts the Stack to Home; no
-  // explicit navigation call is needed or correct here.
+  // paywall phase. PaywallScreen only awaits this — it never flips any flag
+  // or navigates itself in that case, so there's exactly one place deciding
+  // when the phase changes. Flipping state here changes `needsPaywall` below
+  // on this same render pass, which changes `phaseKey` from "paywall" to
+  // "app" and remounts the Stack to Home; no explicit navigation call is
+  // needed or correct here.
   const handleContinueFree = useCallback(() => {
+    setSessionContinuedFree(true);
     useAdsStore.getState().setContinuedFree();
     queryClient.invalidateQueries({ queryKey: ["me"] });
   }, [queryClient]);
@@ -125,7 +133,7 @@ export default function RootNavigator() {
   }, [me?.id, me?.onboardingComplete]);
 
   const entitled = me?.role === "ADMIN" || ["TRIAL", "ACTIVE"].includes(me?.subscription?.status);
-  const needsPaywall = purchasesConfigured && !entitled && !continuedFree;
+  const needsPaywall = purchasesConfigured && !entitled && !continuedFree && !sessionContinuedFree;
 
   // Push registration + daily reminder once the user is fully onboarded AND
   // past the paywall decision — not while the paywall itself is still up.
