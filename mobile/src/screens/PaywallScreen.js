@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, ScrollView, Alert, Linking } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,7 +24,7 @@ const PLANS = {
   monthly: { title: "Monthly", fallbackPrice: "$9.99", period: "month", badge: "BEST VALUE" },
 };
 
-export default function PaywallScreen({ navigation, onSubscribed, onContinueFree, blocking = false }) {
+export default function PaywallScreen({ navigation, onSubscribed, blocking = false }) {
   const { colors } = useTheme();
   const api = useApi();
   const { signOut } = useAuth();
@@ -39,11 +39,6 @@ export default function PaywallScreen({ navigation, onSubscribed, onContinueFree
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState("monthly");
   const [busy, setBusy] = useState(false);
-  // Separate from `busy` (purchase flow) on purpose — these two actions are
-  // mutually exclusive and must not share a disabled/label state with each
-  // other.
-  const [continuingFree, setContinuingFree] = useState(false);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
     loadPackages()
@@ -51,13 +46,6 @@ export default function PaywallScreen({ navigation, onSubscribed, onContinueFree
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(
-    () => () => {
-      mountedRef.current = false;
-    },
-    []
-  );
 
   const finish = async () => {
     const sub = await api("/api/subscription/sync", { method: "POST" });
@@ -110,29 +98,11 @@ export default function PaywallScreen({ navigation, onSubscribed, onContinueFree
 
   const price = (key) => packages[key]?.product?.priceString || PLANS[key].fallbackPrice;
 
-  // The blocking (first-login) paywall is a phase screen owned by
-  // RootNavigator — when `onContinueFree` is passed, RootNavigator is the
-  // single owner of the transition out of this screen: it flips the Zustand
-  // flag, invalidates ["me"], and lets its own phaseKey remount swap the
-  // Stack to the app phase. This screen must not also call
-  // setContinuedFree()/goBack() in that case, or the state update here and
-  // the remount triggered by the same tap race each other — which is what
-  // produced the "first tap glitches, second tap is dead" symptom. The
-  // non-blocking "Upgrade Now" case has no phase to remount, so it keeps
-  // owning its own simple goBack() transition.
-  const continueFree = async () => {
-    if (continuingFree || busy) return;
-    setContinuingFree(true);
-    try {
-      if (onContinueFree) {
-        await onContinueFree();
-      } else {
-        setContinuedFree();
-        if (navigation.canGoBack()) navigation.goBack();
-      }
-    } finally {
-      if (mountedRef.current) setContinuingFree(false);
-    }
+  const continueFree = () => {
+    setContinuedFree();
+    // See the matching comment in finish() — don't fight the phase-remount
+    // with an explicit goBack() in the blocking case.
+    if (!blocking && navigation.canGoBack()) navigation.goBack();
   };
 
   return (
@@ -215,16 +185,16 @@ export default function PaywallScreen({ navigation, onSubscribed, onContinueFree
 
         <Pressable
           onPress={start}
-          disabled={busy || loading || continuingFree}
+          disabled={busy || loading}
           style={{
-            backgroundColor: busy || loading || continuingFree ? colors.surfaceAlt : colors.accent,
+            backgroundColor: busy || loading ? colors.surfaceAlt : colors.accent,
             borderRadius: 16,
             paddingVertical: 14,
             alignItems: "center",
             marginTop: 4,
           }}
         >
-          <Text style={{ color: busy || loading || continuingFree ? colors.textMuted : colors.accentText, fontSize: 15, fontWeight: "700" }}>
+          <Text style={{ color: busy || loading ? colors.textMuted : colors.accentText, fontSize: 15, fontWeight: "700" }}>
             {busy ? "Please wait..." : "Start free trial"}
           </Text>
         </Pressable>
@@ -251,29 +221,16 @@ export default function PaywallScreen({ navigation, onSubscribed, onContinueFree
         {freeTierEnabled && (
           <Pressable
             onPress={continueFree}
-            disabled={continuingFree || busy}
             style={{
               marginTop: 12,
               borderRadius: 16,
               paddingVertical: 13,
               alignItems: "center",
-              backgroundColor: continuingFree || busy ? colors.surfaceAlt : colors.accent,
+              backgroundColor: colors.accent,
             }}
           >
-            <Text
-              style={{
-                color: continuingFree || busy ? colors.textMuted : colors.accentText,
-                fontSize: 17,
-                fontWeight: "700",
-              }}
-            >
-              {continuingFree ? "Loading..." : "Continue for Free"}
-            </Text>
-            {!continuingFree && (
-              <Text style={{ color: colors.accentText, fontSize: 11, marginTop: 2, opacity: 0.85 }}>
-                Limited features, with ads. Upgrade anytime.
-              </Text>
-            )}
+            <Text style={{ color: colors.accentText, fontSize: 17, fontWeight: "700" }}>Continue for Free</Text>
+            <Text style={{ color: colors.accentText, fontSize: 11, marginTop: 2, opacity: 0.85 }}>Limited features, with ads. Upgrade anytime.</Text>
           </Pressable>
         )}
 
