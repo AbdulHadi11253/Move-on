@@ -6,10 +6,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../lib/useApi";
 import { loadPackages, purchase, restore } from "../lib/purchases";
 import { useTheme } from "../theme/ThemeContext";
-import { useAdsStore } from "../state/adsStore";
 import { resetAppState } from "../lib/resetAppState";
 import { useContentBlock } from "../lib/useAppContent";
 import Screen from "../components/ui/Screen";
+import ContinueFreeButton from "../components/paywall/ContinueFreeButton";
 
 const BENEFITS = [
   "Daily guided recovery journeys",
@@ -29,7 +29,6 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
   const api = useApi();
   const { signOut } = useAuth();
   const queryClient = useQueryClient();
-  const setContinuedFree = useAdsStore((s) => s.setContinuedFree);
   const freeTierContent = useContentBlock("free_tier_enabled");
   // Doesn't retroactively affect anyone who already opted into the free
   // tier before the admin switched this off — only hides the option going
@@ -97,13 +96,6 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
   };
 
   const price = (key) => packages[key]?.product?.priceString || PLANS[key].fallbackPrice;
-
-  const continueFree = () => {
-    setContinuedFree();
-    // See the matching comment in finish() — don't fight the phase-remount
-    // with an explicit goBack() in the blocking case.
-    if (!blocking && navigation.canGoBack()) navigation.goBack();
-  };
 
   return (
     <Screen>
@@ -218,21 +210,7 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
           </Pressable>
         </View>
 
-        {freeTierEnabled && (
-          <Pressable
-            onPress={continueFree}
-            style={{
-              marginTop: 12,
-              borderRadius: 16,
-              paddingVertical: 13,
-              alignItems: "center",
-              backgroundColor: colors.accent,
-            }}
-          >
-            <Text style={{ color: colors.accentText, fontSize: 17, fontWeight: "700" }}>Continue for Free</Text>
-            <Text style={{ color: colors.accentText, fontSize: 11, marginTop: 2, opacity: 0.85 }}>Limited features, with ads. Upgrade anytime.</Text>
-          </Pressable>
-        )}
+        {freeTierEnabled && <ContinueFreeButton navigation={navigation} />}
 
         <Pressable
           onPress={async () => {

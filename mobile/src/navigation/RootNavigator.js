@@ -218,6 +218,18 @@ export default function RootNavigator() {
             <PaywallScreen {...props} blocking onSubscribed={(subscription) => setMe({ ...me, subscription })} />
           )}
         </Stack.Screen>
+        {/*
+          Also registered here (not just in the post-paywall "app" phase
+          below) so the Continue-for-Free button can imperatively
+          `navigation.reset({ routes: [{ name: "MainTabs" }] })` on THIS
+          same navigator instance the instant it's pressed, instead of
+          waiting on this component to re-render, recompute `needsPaywall`,
+          and remount the whole Stack under a new phaseKey. That remount
+          still happens right after (because `continuedFree` flips below),
+          but it's no longer what makes the screen change visible — it just
+          quietly replaces one MainTabs-showing navigator with another.
+        */}
+        <Stack.Screen name="MainTabs" component={MainTabs} />
         {legal}
       </>
     );
