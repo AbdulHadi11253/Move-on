@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator, Text, Pressable } from "react-native";
+import { View, ActivityIndicator, Text, Pressable, Alert } from "react-native";
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "@clerk/clerk-expo";
@@ -72,19 +72,31 @@ export default function RootNavigator() {
   const { continuedFree, hydrated: adsHydrated } = useAdsStore();
   const [me, setMe] = useState(null);
   const [loadingMe, setLoadingMe] = useState(true);
+  // A network failure here used to leave `me` null with no error signal —
+  // for an already-onboarded signed-in user, that silently routed them
+  // into the onboarding flow (`!me?.onboardingComplete` is true when `me`
+  // is null) instead of showing a retry. Now surfaced explicitly instead.
+  const [meError, setMeError] = useState(false);
+
+  const fetchMe = () => {
+    setLoadingMe(true);
+    setMeError(false);
+    api("/api/users/me")
+      .then((user) => setMe(user))
+      .catch(() => setMeError(true))
+      .finally(() => setLoadingMe(false));
+  };
 
   useEffect(() => {
     if (!isSignedIn) {
       setMe(null);
+      setMeError(false);
       setLoadingMe(false);
       resetPurchases();
       cancelDailyReminder();
       return;
     }
-    setLoadingMe(true);
-    api("/api/users/me")
-      .then((user) => setMe(user))
-      .finally(() => setLoadingMe(false));
+    fetchMe();
   }, [isSignedIn]);
 
   // Configuring RevenueCat and syncing the subscription is its own effect,
@@ -156,6 +168,25 @@ export default function RootNavigator() {
 
   if (!isLoaded || !hydrated || !adsHydrated || (isSignedIn && loadingMe)) return <Spinner colors={colors} />;
 
+  if (isSignedIn && meError) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, padding: 32 }}>
+        <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "600", marginBottom: 8 }}>
+          Couldn't load your account
+        </Text>
+        <Text style={{ color: colors.textMuted, textAlign: "center", marginBottom: 20 }}>
+          Check your connection and try again.
+        </Text>
+        <Pressable
+          onPress={fetchMe}
+          style={{ backgroundColor: colors.accent, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12 }}
+        >
+          <Text style={{ color: colors.accentText, fontWeight: "600" }}>Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   const hasAnswers = Object.keys(answers).length > 0;
 
   const legal = (
@@ -202,9 +233,11 @@ export default function RootNavigator() {
             onComplete={() => setMe({ ...me })}
             onNoQuestions={() => {
               clearAnswers();
-              api("/api/onboarding/answers", { method: "POST", body: { answers: [] } }).then(() =>
-                setMe({ ...me, onboardingComplete: true })
-              );
+              api("/api/onboarding/answers", { method: "POST", body: { answers: [] } })
+                .then(() => setMe({ ...me, onboardingComplete: true }))
+                .catch(() =>
+                  Alert.alert("Couldn't continue", "Check your connection and try again.")
+                );
             }}
           />
         )}
