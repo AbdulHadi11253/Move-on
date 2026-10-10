@@ -29,7 +29,17 @@ export default function MainTabs() {
   // works fine on a phone (a few px of home-indicator at most) but breaks on
   // a tablet, where the OS's own on-screen nav bar is much taller, leaving
   // our tab bar overlapping it instead of sitting above it.
-  const tabBarHeight = 56 + insets.bottom;
+  //
+  // `insets.bottom` itself isn't fully trustworthy either — on some Android
+  // devices (classic 3-button nav in particular) it has reported 0 even
+  // though the OS nav bar is very much still there, right under our tab
+  // bar, leaving the two crowded against each other. MIN_BOTTOM_PAD is a
+  // floor under whatever the inset reports, so there's always a clearly
+  // visible gap above the OS's own nav row regardless of whether the
+  // platform's inset reporting is accurate on a given device.
+  const MIN_BOTTOM_PAD = 16;
+  const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
+  const tabBarHeight = 60 + bottomPad;
 
   // The landing tab comes from App Content. We must wait for it to load before
   // mounting the navigator, because `initialRouteName` only applies on first
@@ -72,13 +82,13 @@ export default function MainTabs() {
           borderTopColor: colors.tabBarBorder,
           height: tabBarHeight,
           paddingTop: 8,
-          paddingBottom: insets.bottom,
+          paddingBottom: bottomPad,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
         tabBarIcon: ({ color, size, focused }) => (
           <Ionicons
             name={focused ? ICONS[route.name] : `${ICONS[route.name]}-outline`}
-            size={22}
+            size={24}
             color={color}
           />
         ),

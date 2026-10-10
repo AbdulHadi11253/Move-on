@@ -113,7 +113,7 @@ export default function PopularPostsSection({ navigation }) {
         <Screen>
           <AdminHeader title="Quote" onBack={() => setViewingPost(null)} />
           {viewingPost && (
-            <View style={{ paddingHorizontal: 20 }}>
+            <View style={{ paddingHorizontal: 20, alignItems: "center" }}>
               <QuotePostCard
                 post={posts?.find((p) => p.id === viewingPost.id) || viewingPost}
                 onToggleSave={toggleSave}

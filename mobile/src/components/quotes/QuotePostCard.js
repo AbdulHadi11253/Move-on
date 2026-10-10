@@ -121,7 +121,19 @@ export default function QuotePostCard({
           </Text>
         </Pressable>
       ) : (
-        <Pressable disabled={!expandable} onPress={() => setReaderOpen(true)} style={{ width, height: imageHeight }}>
+        <View style={{ width, height: imageHeight }}>
+          {/*
+            The tap-to-open-reader target used to be a single Pressable
+            wrapping this whole FlatList. A Pressable sitting above a
+            horizontal ScrollView in the touch-responder hierarchy tends to
+            win the gesture negotiation for anything short of a long drag,
+            which made swiping between carousel slides unreliable right on
+            the feed card — you had to open the full reader first to page
+            through images. Pressable now wraps each slide's Image
+            individually instead, so the FlatList's own pan responder owns
+            the horizontal swipe outright, and a plain tap on the visible
+            slide still opens the reader.
+          */}
           <FlatList
             data={slides}
             keyExtractor={(item, i) => (item.__readMore ? "read-more" : item.id || String(i))}
@@ -134,7 +146,9 @@ export default function QuotePostCard({
               item.__readMore ? (
                 <ReadMoreSlide width={width} height={imageHeight} colors={colors} onPress={() => onReadMore?.(post)} />
               ) : (
-                <Image source={{ uri: item.imageUrl }} style={{ width, height: imageHeight }} resizeMode="cover" />
+                <Pressable disabled={!expandable} onPress={() => setReaderOpen(true)} style={{ width, height: imageHeight }}>
+                  <Image source={{ uri: item.imageUrl }} style={{ width, height: imageHeight }} resizeMode="cover" />
+                </Pressable>
               )
             }
           />
@@ -182,7 +196,7 @@ export default function QuotePostCard({
             ))}
           </View>
         )}
-        </Pressable>
+        </View>
       )}
 
       <QuoteReaderModal post={post} visible={readerOpen} onClose={() => setReaderOpen(false)} />

@@ -9,6 +9,7 @@ import AdminHeader from "../../components/admin/AdminHeader";
 import CategoriesRow from "../../components/home/CategoriesRow";
 import QuotePostCard from "../../components/quotes/QuotePostCard";
 import CommentsModal from "../../components/quotes/CommentsModal";
+import { GRID_COLUMNS, GRID_CARD_WIDTH } from "../../lib/responsiveGrid";
 
 export default function QuotesExploreScreen({ navigation }) {
   const api = useApi();
@@ -43,7 +44,13 @@ export default function QuotesExploreScreen({ navigation }) {
         <FlatList
           data={filteredPosts}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, alignItems: "center" }}
+          numColumns={GRID_COLUMNS}
+          columnWrapperStyle={GRID_COLUMNS > 1 ? { justifyContent: "space-between" } : undefined}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 32,
+            alignItems: GRID_COLUMNS > 1 ? "stretch" : "center",
+          }}
           ListHeaderComponent={
             <CategoriesRow
               categories={categories}
@@ -53,6 +60,7 @@ export default function QuotesExploreScreen({ navigation }) {
           renderItem={({ item }) => (
             <QuotePostCard
               post={item}
+              cardWidth={GRID_CARD_WIDTH}
               onToggleSave={toggleSave}
               onOpenComments={openComments}
               style={{ marginBottom: 16 }}

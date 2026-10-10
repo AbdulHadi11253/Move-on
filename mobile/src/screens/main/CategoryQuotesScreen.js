@@ -9,6 +9,7 @@ import Screen from "../../components/ui/Screen";
 import AdminHeader from "../../components/admin/AdminHeader";
 import QuotePostCard from "../../components/quotes/QuotePostCard";
 import CommentsModal from "../../components/quotes/CommentsModal";
+import { GRID_COLUMNS, GRID_CARD_WIDTH } from "../../lib/responsiveGrid";
 
 const SORT_OPTIONS = [
   { value: "latest", label: "Latest", icon: "time-outline" },
@@ -99,9 +100,21 @@ export default function CategoryQuotesScreen({ route, navigation }) {
         <FlatList
           data={shownPosts}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, alignItems: "center" }}
+          numColumns={GRID_COLUMNS}
+          columnWrapperStyle={GRID_COLUMNS > 1 ? { justifyContent: "space-between" } : undefined}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 32,
+            alignItems: GRID_COLUMNS > 1 ? "stretch" : "center",
+          }}
           renderItem={({ item }) => (
-            <QuotePostCard post={item} onToggleSave={toggleSave} onOpenComments={openComments} style={{ marginBottom: 16 }} />
+            <QuotePostCard
+              post={item}
+              cardWidth={GRID_CARD_WIDTH}
+              onToggleSave={toggleSave}
+              onOpenComments={openComments}
+              style={{ marginBottom: 16 }}
+            />
           )}
           ListEmptyComponent={
             <Text style={{ color: colors.textMuted, textAlign: "center", marginTop: 40 }}>

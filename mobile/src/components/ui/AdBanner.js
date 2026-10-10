@@ -15,8 +15,15 @@ export default function AdBanner() {
   const showAds = useShowAds();
   const [dismissed, setDismissed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // The native BannerAd view reserves its adaptive-banner height as soon as
+  // it mounts, before any creative has actually loaded. On a load failure
+  // (no fill, offline, etc.) it was left mounted with that height still
+  // reserved and nothing drawn in it — a dead, unclosable block of empty
+  // space. Tracking the failure explicitly and unmounting on it collapses
+  // that space back to nothing instead of leaving it stuck forever.
+  const [failed, setFailed] = useState(false);
 
-  if (!adsAvailable || !showAds || dismissed) return null;
+  if (!adsAvailable || !showAds || dismissed || failed) return null;
 
   const { BannerAd, BannerAdSize } = require("react-native-google-mobile-ads");
 
@@ -35,7 +42,10 @@ export default function AdBanner() {
         unitId={BANNER_UNIT_ID}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
         onAdLoaded={() => setLoaded(true)}
-        onAdFailedToLoad={() => setLoaded(false)}
+        onAdFailedToLoad={() => {
+          setLoaded(false);
+          setFailed(true);
+        }}
       />
     </View>
   );
