@@ -1,5 +1,6 @@
 import { View, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import HomeNavigator from "./HomeNavigator";
@@ -23,6 +24,23 @@ const ICONS = {
 export default function MainTabs() {
   const { colors } = useTheme();
   const api = useApi();
+  const insets = useSafeAreaInsets();
+  // Letting @react-navigation/bottom-tabs derive its own padding purely
+  // from useSafeAreaInsets() is the textbook-correct approach, and it's
+  // still what drives this on the vast majority of devices. But it was
+  // re-tested against real hardware (two separate Android phones, both
+  // reporting as Vivo/FunTouch in their status bar) and the tab bar still
+  // crowded the on-screen 3-button nav row — some OEM Android skins are
+  // documented to not reliably dispatch the navigation bar's height
+  // through the standard insets API at all, independent of this app's own
+  // edge-to-edge configuration (confirmed correct: transparent nav bar in
+  // AndroidManifest/styles.xml). MIN_BOTTOM_PAD is a floor under whatever
+  // the platform reports, not a replacement for it — a device that
+  // correctly reports a larger inset (gesture nav, tablets, iPads) still
+  // gets that real, larger value; only a device reporting zero (or
+  // something smaller than this floor) gets bumped up to it.
+  const MIN_BOTTOM_PAD = 12;
+  const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
 
   // The landing tab comes from App Content. We must wait for it to load before
   // mounting the navigator, because `initialRouteName` only applies on first
@@ -60,17 +78,19 @@ export default function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        // No manual height/paddingBottom here on purpose. @react-navigation/
-        // bottom-tabs' own BottomTabBar already measures the real device
-        // safe-area bottom inset (via react-native-safe-area-context) and
-        // sizes itself to clear it — 3-button nav, gesture nav, tablets,
-        // foldables, iPhones and iPads alike — as long as we don't override
-        // `height`/`paddingBottom` ourselves. Re-deriving that math by hand
-        // is exactly what kept producing device-specific overlap/gap bugs;
-        // letting the library own it is the dynamic, no-hardcoding fix.
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopColor: colors.tabBarBorder,
+          // The library computes its own default height as a fixed content
+          // height (49, its internal TABBAR_HEIGHT_UIKIT constant) plus the
+          // RAW insets.bottom — so overriding only paddingBottom with our
+          // floor-adjusted value, without also growing height to match,
+          // would squeeze/clip the icon+label content rather than add
+          // breathing room below it. Mirroring the library's own formula
+          // here, just substituting bottomPad for the raw inset, keeps the
+          // two consistent.
+          height: 49 + bottomPad,
+          paddingBottom: bottomPad,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
         tabBarIcon: ({ color, size, focused }) => (
