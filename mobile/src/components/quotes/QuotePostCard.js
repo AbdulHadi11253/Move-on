@@ -106,8 +106,14 @@ export default function QuotePostCard({
           disabled={!expandable}
           onPress={() => setReaderOpen(true)}
           style={{
+            // Matches the image branch's fixed `imageHeight` exactly (was
+            // `minHeight: 200`, which let text cards sit shorter than image
+            // cards) — text and image posts now occupy equal-sized cards,
+            // which matters a lot more now that tablets show them side by
+            // side in a 2-column grid: a ragged mix of heights there looked
+            // broken in a way a single phone-width column mostly hid.
             width,
-            minHeight: 200,
+            height: imageHeight,
             backgroundColor: colors.accentSoft,
             alignItems: "center",
             justifyContent: "center",
@@ -116,7 +122,11 @@ export default function QuotePostCard({
           }}
         >
           <Ionicons name="sparkles" size={18} color={colors.accent} style={{ marginBottom: 14 }} />
-          <Text style={{ color: colors.textPrimary, fontSize: 19, lineHeight: 28, fontWeight: "600", textAlign: "center" }}>
+          <Text
+            numberOfLines={8}
+            ellipsizeMode="tail"
+            style={{ color: colors.textPrimary, fontSize: 19, lineHeight: 28, fontWeight: "600", textAlign: "center" }}
+          >
             {post.text}
           </Text>
         </Pressable>
@@ -142,6 +152,13 @@ export default function QuotePostCard({
             showsHorizontalScrollIndicator={false}
             scrollEnabled={isCarousel || showReadMore}
             onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
+            // Each slide is exactly `width` wide, known up front — giving
+            // FlatList that directly instead of letting it measure on the
+            // fly is what makes paging feel smooth and responsive in both
+            // swipe directions, especially right after mount before any
+            // natural scroll has happened yet to "warm up" its own layout
+            // cache.
+            getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
             renderItem={({ item }) =>
               item.__readMore ? (
                 <ReadMoreSlide width={width} height={imageHeight} colors={colors} onPress={() => onReadMore?.(post)} />
