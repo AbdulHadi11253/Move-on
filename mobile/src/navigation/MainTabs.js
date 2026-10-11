@@ -1,4 +1,4 @@
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,20 +27,26 @@ export default function MainTabs() {
   const insets = useSafeAreaInsets();
   // Letting @react-navigation/bottom-tabs derive its own padding purely
   // from useSafeAreaInsets() is the textbook-correct approach, and it's
-  // still what drives this on the vast majority of devices. But it was
-  // re-tested against real hardware (two separate Android phones, both
-  // reporting as Vivo/FunTouch in their status bar) and the tab bar still
-  // crowded the on-screen 3-button nav row — some OEM Android skins are
-  // documented to not reliably dispatch the navigation bar's height
-  // through the standard insets API at all, independent of this app's own
-  // edge-to-edge configuration (confirmed correct: transparent nav bar in
-  // AndroidManifest/styles.xml). MIN_BOTTOM_PAD is a floor under whatever
-  // the platform reports, not a replacement for it — a device that
-  // correctly reports a larger inset (gesture nav, tablets, iPads) still
-  // gets that real, larger value; only a device reporting zero (or
-  // something smaller than this floor) gets bumped up to it.
+  // still what drives this on the vast majority of devices, iOS included.
+  // But it was re-tested against real Android hardware (two separate
+  // phones, both reporting as Vivo/FunTouch in their status bar) and the
+  // tab bar still crowded the on-screen 3-button nav row — some OEM
+  // Android skins are documented to not reliably dispatch the navigation
+  // bar's height through the standard insets API at all, independent of
+  // this app's own edge-to-edge configuration (confirmed correct:
+  // transparent nav bar already in styles.xml). MIN_BOTTOM_PAD is a floor
+  // under whatever Android reports, not a replacement for it — an Android
+  // device that correctly reports a larger inset (gesture nav, tablets)
+  // still gets that real, larger value; only one reporting zero or
+  // smaller than this floor gets bumped up to it.
+  //
+  // iOS is deliberately NOT given this floor. Apple's safe-area API has no
+  // equivalent OEM-skin inconsistency — an iPhone with a physical home
+  // button genuinely has insets.bottom === 0, and that's correct, not a
+  // misreporting bug. Flooring it there would force an unwanted gap on
+  // exactly the devices that should have none.
   const MIN_BOTTOM_PAD = 12;
-  const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
+  const bottomPad = Platform.OS === "android" ? Math.max(insets.bottom, MIN_BOTTOM_PAD) : insets.bottom;
 
   // The landing tab comes from App Content. We must wait for it to load before
   // mounting the navigator, because `initialRouteName` only applies on first
