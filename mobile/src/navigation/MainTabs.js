@@ -1,6 +1,5 @@
 import { View, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import HomeNavigator from "./HomeNavigator";
@@ -24,22 +23,6 @@ const ICONS = {
 export default function MainTabs() {
   const { colors } = useTheme();
   const api = useApi();
-  const insets = useSafeAreaInsets();
-  // A fixed height here ignores the device's own bottom inset entirely — that
-  // works fine on a phone (a few px of home-indicator at most) but breaks on
-  // a tablet, where the OS's own on-screen nav bar is much taller, leaving
-  // our tab bar overlapping it instead of sitting above it.
-  //
-  // `insets.bottom` itself isn't fully trustworthy either — on some Android
-  // devices (classic 3-button nav in particular) it has reported 0 even
-  // though the OS nav bar is very much still there, right under our tab
-  // bar, leaving the two crowded against each other. MIN_BOTTOM_PAD is a
-  // floor under whatever the inset reports, so there's always a clearly
-  // visible gap above the OS's own nav row regardless of whether the
-  // platform's inset reporting is accurate on a given device.
-  const MIN_BOTTOM_PAD = 16;
-  const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
-  const tabBarHeight = 60 + bottomPad;
 
   // The landing tab comes from App Content. We must wait for it to load before
   // mounting the navigator, because `initialRouteName` only applies on first
@@ -77,12 +60,17 @@ export default function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
+        // No manual height/paddingBottom here on purpose. @react-navigation/
+        // bottom-tabs' own BottomTabBar already measures the real device
+        // safe-area bottom inset (via react-native-safe-area-context) and
+        // sizes itself to clear it — 3-button nav, gesture nav, tablets,
+        // foldables, iPhones and iPads alike — as long as we don't override
+        // `height`/`paddingBottom` ourselves. Re-deriving that math by hand
+        // is exactly what kept producing device-specific overlap/gap bugs;
+        // letting the library own it is the dynamic, no-hardcoding fix.
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopColor: colors.tabBarBorder,
-          height: tabBarHeight,
-          paddingTop: 8,
-          paddingBottom: bottomPad,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
         tabBarIcon: ({ color, size, focused }) => (
