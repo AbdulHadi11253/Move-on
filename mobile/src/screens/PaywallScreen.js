@@ -10,6 +10,7 @@ import { resetAppState } from "../lib/resetAppState";
 import { useContentBlock } from "../lib/useAppContent";
 import Screen from "../components/ui/Screen";
 import ContinueFreeButton from "../components/paywall/ContinueFreeButton";
+import AnimatedPressable from "../components/ui/AnimatedPressable";
 
 const BENEFITS = [
   "Daily guided recovery journeys",
@@ -137,8 +138,9 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
           ["monthly", "weekly"].map((key) => {
             const active = selected === key;
             return (
-              <Pressable
+              <AnimatedPressable
                 key={key}
+                scaleTo={0.98}
                 onPress={() => setSelected(key)}
                 style={{
                   flexDirection: "row",
@@ -170,12 +172,12 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
                   size={22}
                   color={active ? colors.accent : colors.textMuted}
                 />
-              </Pressable>
+              </AnimatedPressable>
             );
           })
         )}
 
-        <Pressable
+        <AnimatedPressable
           onPress={start}
           disabled={busy || loading}
           style={{
@@ -189,7 +191,7 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
           <Text style={{ color: busy || loading ? colors.textMuted : colors.accentText, fontSize: 15, fontWeight: "700" }}>
             {busy ? "Please wait..." : "Start free trial"}
           </Text>
-        </Pressable>
+        </AnimatedPressable>
 
         <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: "center", marginTop: 8, lineHeight: 15 }}>
           Your card is charged automatically after the 3-day trial ends unless you cancel at least 24 hours before it does.

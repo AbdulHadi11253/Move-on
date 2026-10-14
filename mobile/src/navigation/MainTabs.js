@@ -1,8 +1,8 @@
 import { View, ActivityIndicator, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import AnimatedTabIcon from "../components/ui/AnimatedTabIcon";
 import HomeNavigator from "./HomeNavigator";
 import QuotesScreen from "../screens/main/QuotesScreen";
 import JourneyNavigator from "./JourneyNavigator";
@@ -99,10 +99,11 @@ export default function MainTabs() {
           paddingBottom: bottomPad,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
-        tabBarIcon: ({ color, size, focused }) => (
-          <Ionicons
-            name={focused ? ICONS[route.name] : `${ICONS[route.name]}-outline`}
-            size={24}
+        tabBarIcon: ({ color, focused }) => (
+          <AnimatedTabIcon
+            name={ICONS[route.name]}
+            outlineName={`${ICONS[route.name]}-outline`}
+            focused={focused}
             color={color}
           />
         ),

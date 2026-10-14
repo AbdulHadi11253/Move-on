@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { View, Text, Image, Pressable, FlatList, Dimensions, Share } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "../../theme/ThemeContext";
 import QuoteReaderModal from "./QuoteReaderModal";
+import AnimatedPressable from "../ui/AnimatedPressable";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Uncapped, a card this wide on a tablet (SCREEN_WIDTH there is 2-3x a
@@ -88,7 +90,12 @@ export default function QuotePostCard({
   };
 
   return (
-    <View
+    // A quick, cheap entrance — fades and slides up slightly as each card
+    // first appears (feed load, category switch, carousel paging in new
+    // posts). Runs once per mount via Reanimated's layout-animation API, on
+    // the UI thread, so it doesn't cost anything during scrolling itself.
+    <Animated.View
+      entering={FadeInUp.duration(280).springify().damping(18)}
       style={[
         {
           width,
@@ -102,7 +109,7 @@ export default function QuotePostCard({
       ]}
     >
       {isText ? (
-        <Pressable
+        <AnimatedPressable
           disabled={!expandable}
           onPress={() => setReaderOpen(true)}
           style={{
@@ -129,7 +136,7 @@ export default function QuotePostCard({
           >
             {post.text}
           </Text>
-        </Pressable>
+        </AnimatedPressable>
       ) : (
         <View style={{ width, height: imageHeight }}>
           {/*
@@ -163,9 +170,13 @@ export default function QuotePostCard({
               item.__readMore ? (
                 <ReadMoreSlide width={width} height={imageHeight} colors={colors} onPress={() => onReadMore?.(post)} />
               ) : (
-                <Pressable disabled={!expandable} onPress={() => setReaderOpen(true)} style={{ width, height: imageHeight }}>
+                <AnimatedPressable
+                  disabled={!expandable}
+                  onPress={() => setReaderOpen(true)}
+                  style={{ width, height: imageHeight }}
+                >
                   <Image source={{ uri: item.imageUrl }} style={{ width, height: imageHeight }} resizeMode="cover" />
-                </Pressable>
+                </AnimatedPressable>
               )
             }
           />
@@ -255,14 +266,14 @@ export default function QuotePostCard({
           )}
         </View>
 
-        <Pressable onPress={() => onToggleSave(post)}>
+        <AnimatedPressable scaleTo={0.8} onPress={() => onToggleSave(post)}>
           <Ionicons
             name={post.isSaved ? "bookmark" : "bookmark-outline"}
             size={21}
             color={post.isSaved ? colors.accent : colors.textSecondary}
           />
-        </Pressable>
+        </AnimatedPressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }

@@ -16,3 +16,10 @@ export const GRID_CARD_WIDTH =
     : (SCREEN_WIDTH - SIDE_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
 export const GRID_GAP_SIZE = GRID_GAP;
+
+// A 2-column grid with an odd number of items leaves the last row's second
+// cell empty — a visible gap of dead space next to the final card on
+// tablets. Sections give that lone last item this full-row width instead of
+// the normal half-width GRID_CARD_WIDTH, so it fills the row rather than
+// sitting next to nothing.
+export const GRID_FULL_ROW_WIDTH = SCREEN_WIDTH - SIDE_PADDING * 2;
