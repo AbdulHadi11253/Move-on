@@ -109,12 +109,15 @@ export default function RootNavigator() {
   // free trial" / "Restore purchases" failed with "no singleton instance" /
   // "this plan isn't available" for every first-time user.
   useEffect(() => {
-    if (!purchasesConfigured || !me?.onboardingComplete || me.role === "ADMIN") return;
+    if (!purchasesConfigured || !me?.onboardingComplete) return;
     let cancelled = false;
+    // Configure for everyone (admins included — otherwise an admin opening
+    // "Upgrade Now" would find the SDK never configured), but only sync the
+    // subscription for non-admins, who are the only ones it can apply to.
     initPurchases(me.id)
-      .then(() => api("/api/subscription/sync", { method: "POST" }))
+      .then(() => (me.role === "ADMIN" ? null : api("/api/subscription/sync", { method: "POST" })))
       .then((subscription) => {
-        if (!cancelled) setMe((prev) => (prev ? { ...prev, subscription } : prev));
+        if (!cancelled && subscription) setMe((prev) => (prev ? { ...prev, subscription } : prev));
       })
       .catch(() => {});
     return () => {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, ScrollView, Alert, Linking } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, ScrollView, Alert, Linking, Platform } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,10 +20,16 @@ const BENEFITS = [
 
 // Both plans include a 3-day free trial (configured on the store products);
 // the card is charged automatically when the trial ends unless cancelled.
+// Prices are deliberately NOT hardcoded here: only the store's own localized
+// priceString is ever shown, so what's displayed is always what would actually
+// be charged (App Review requires real pricing, and a made-up fallback figure
+// next to a purchase that then fails is worse than showing nothing).
 const PLANS = {
-  weekly: { title: "Weekly", fallbackPrice: "$2.99", period: "week" },
-  monthly: { title: "Monthly", fallbackPrice: "$9.99", period: "month", badge: "BEST VALUE" },
+  weekly: { title: "Weekly", period: "week" },
+  monthly: { title: "Monthly", period: "month", badge: "BEST VALUE" },
 };
+
+const STORE_NAME = Platform.OS === "ios" ? "App Store" : "Google Play";
 
 export default function PaywallScreen({ navigation, onSubscribed, blocking = false }) {
   const { colors } = useTheme();
@@ -39,13 +45,36 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState("monthly");
   const [busy, setBusy] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    []
+  );
+
+  // Resolves to the freshly loaded packages (or null on failure) so callers
+  // that need the result right now — "Start free trial" retrying a missing
+  // plan — don't have to wait for a state update to re-render first.
+  const load = useCallback(async () => {
+    if (mountedRef.current) setLoading(true);
+    try {
+      const loaded = await loadPackages();
+      if (mountedRef.current) setPackages(loaded);
+      return loaded;
+    } catch {
+      return null;
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadPackages()
-      .then(setPackages)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    load();
+  }, [load]);
+
+  const plansUnavailable = !loading && !packages.weekly && !packages.monthly;
 
   const finish = async () => {
     const sub = await api("/api/subscription/sync", { method: "POST" });
@@ -69,9 +98,20 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
   };
 
   const start = async () => {
-    const pkg = packages[selected];
+    let pkg = packages[selected];
     if (!pkg) {
-      Alert.alert("Unavailable", "This plan isn't available right now. Please try again later.");
+      // Plans didn't load earlier (slow store response, transient error) —
+      // try once more right now instead of dead-ending on the first tap.
+      setBusy(true);
+      const fresh = await load();
+      setBusy(false);
+      pkg = fresh?.[selected] || null;
+    }
+    if (!pkg) {
+      Alert.alert(
+        "Couldn't load subscription options",
+        `We couldn't load this plan from the ${STORE_NAME} right now. Please check your connection and try again in a moment.`
+      );
       return;
     }
     setBusy(true);
@@ -96,7 +136,10 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
     }
   };
 
-  const price = (key) => packages[key]?.product?.priceString || PLANS[key].fallbackPrice;
+  const planSubtitle = (key) => {
+    const priceString = packages[key]?.product?.priceString;
+    return priceString ? `3 days free, then ${priceString} / ${PLANS[key].period}` : "Price unavailable right now";
+  };
 
   return (
     <Screen>
@@ -163,9 +206,7 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
                       </View>
                     )}
                   </View>
-                  <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 4 }}>
-                    3 days free, then {price(key)} / {PLANS[key].period}
-                  </Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 4 }}>{planSubtitle(key)}</Text>
                 </View>
                 <Ionicons
                   name={active ? "radio-button-on" : "radio-button-off"}
@@ -175,6 +216,17 @@ export default function PaywallScreen({ navigation, onSubscribed, blocking = fal
               </AnimatedPressable>
             );
           })
+        )}
+
+        {plansUnavailable && (
+          <View style={{ alignItems: "center", marginBottom: 10 }}>
+            <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: "center", lineHeight: 17 }}>
+              We couldn't load subscription options from the {STORE_NAME}. Check your connection and try again.
+            </Text>
+            <Pressable onPress={load} hitSlop={10} style={{ marginTop: 8 }}>
+              <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "700" }}>Retry</Text>
+            </Pressable>
+          </View>
         )}
 
         <AnimatedPressable
